@@ -1,0 +1,82 @@
+/* "Electric" mood board theme for the client demo.
+   Load after styles.css. It changes tokens and a few shapes only, so every screen of the
+   template picks it up: electric blue, lime, charcoal, fog grey, very round cards and pill buttons. */
+:root {
+  --mb-blue: #1F5EFF; --mb-lime: #C5FF6A; --mb-ink: #24252C; --mb-fog: #E4E4EB;
+  --brand-blue: var(--mb-blue); --brand-green: var(--mb-lime); --brand-teal: var(--mb-blue); --brand-black: var(--mb-ink);
+  --bg: #E4E4EB; --surface: #fff; --surface-2: #EFEFF4; --text: #24252C; --muted: #5C5E69; --border: #D7D7E0;
+  --accent: #1F5EFF; --accent-ink: #fff; --accent-soft: #E2E9FF; --accent-text: #1A4FD6;
+  --ok: #2B6600; --ok-soft: #E5FFC2; --info: #1A4FD6; --info-soft: #E2E9FF;
+  --radius: 24px; --radius-lg: 18px; --radius-xl: 24px; --radius-dialog: 28px; --shadow: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17181C; --surface: #24252C; --surface-2: #2E2F37; --text: #F4F4F7; --muted: #A4A6B2; --border: #383944;
+    --accent: #3B72FF; --accent-ink: #fff; --accent-soft: #1F2B57; --accent-text: #A3BDFF;
+    --ok: #C5FF6A; --ok-soft: #2A3419; --info: #A3BDFF; --info-soft: #1F2B57;
+    --radius: 24px; --radius-lg: 18px; --radius-xl: 24px; --radius-dialog: 28px; --shadow: none;
+  }
+}
+
+h2, h3 { letter-spacing: -.01em; }
+
+/* Charcoal header with lime active tab */
+.top { background: var(--mb-ink); color: #fff; border-bottom: 0; }
+.top::after { display: none; }
+.nav a { border-radius: 999px; color: rgba(255,255,255,.72); }
+.nav a:hover { background: rgba(255,255,255,.1); }
+.nav a.on { background: var(--mb-lime); color: var(--mb-ink); }
+.top .sync { background: var(--mb-lime); color: var(--mb-ink); }
+.top .sync.off { background: #FF9C8F; color: var(--mb-ink); }
+@media (max-width: 719px) {
+  .nav { background: var(--mb-ink); border-top: 0; }
+}
+
+/* Pills everywhere */
+.btn, .seg, .seg button, .chip, .banner, #toast { border-radius: 999px; }
+.btn { font-weight: 700; }
+.btn.primary:hover:not(:disabled) { border-color: var(--text); }
+.chip { border-width: 1.5px; }
+.chip.on { background: var(--mb-blue); border-color: var(--mb-blue); color: #fff; }
+.input { border-radius: 16px; }
+.opt span { border-width: 1.5px; }
+
+/* Borderless round cards on fog grey */
+.card, .item, .cart, .stat, .c-item, .kcol { border-color: transparent; border-radius: var(--radius); }
+.item:hover:not(:disabled), .c-item:hover:not(:disabled) { border-color: var(--mb-blue); }
+.ticket { border-radius: 18px; border-color: transparent; }
+.ticket.late { border-color: var(--danger); }
+dialog { border-radius: 28px; }
+.sheet > .row:last-child { border-top: 0; }
+
+/* Stat tiles: first in blue, second in charcoal with a lime number */
+.stats .stat:nth-child(1) { background: var(--mb-blue); color: #fff; }
+.stats .stat:nth-child(2) { background: var(--mb-ink); color: #fff; }
+.stats .stat:nth-child(2) .stat-v { color: var(--mb-lime); }
+.stats .stat:nth-child(-n+2) .muted { color: inherit; opacity: .8; }
+.stat-v { font-size: 30px; letter-spacing: -.02em; }
+
+/* Tables as round dots, like a calendar */
+.tbl { border-radius: 999px; aspect-ratio: 1; min-height: 0; border-width: 1.5px; }
+.tbl.busy::after { background: var(--mb-lime); box-shadow: 0 0 0 1.5px var(--mb-ink); }
+
+/* Floating bars */
+.cartbar, .c-bar { background: var(--mb-ink); color: #fff; border-radius: 999px; }
+.cartbar span:last-child, .c-bar span:last-child { color: var(--mb-lime); }
+@media (prefers-color-scheme: dark) { .cartbar, .c-bar { background: var(--mb-blue); } .cartbar span:last-child, .c-bar span:last-child { color: #fff; } }
+
+.banner { border: 0; background: var(--mb-blue); color: #fff; }
+.banner b { color: var(--mb-lime); }
+.approve { border: 0; border-radius: 18px; }
+
+/* Customer page */
+.c-where { background: var(--mb-lime); color: var(--mb-ink); transform: rotate(-4deg); }
+.c-add { background: var(--mb-lime); color: var(--mb-ink); }
+.c-num { color: var(--accent); font-size: 80px; letter-spacing: -.03em; }
+.c-steps li.on::before { background: var(--mb-blue); }
+.cat-h { color: var(--text); }
+.qrcard { border-color: var(--mb-blue); border-radius: 24px; }
+
+/* Demo strip (added by demo.js) */
+.demo-bar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; justify-content: center; padding: 7px 16px; background: var(--mb-lime); color: var(--mb-ink); font-size: 13px; font-weight: 600; }
+.demo-bar a, .demo-bar button { color: var(--mb-ink); font: inherit; font-weight: 700; background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }

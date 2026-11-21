@@ -4,8 +4,9 @@
    network shares one live state, and changes made while offline are queued and sent later. */
 
 const { applyOp, seed, uid } = window.CafeShared;
-const KEY = 'cafeflow.v1';      // standalone data
-const SKEY = 'cafeflow.server'; // server mode: cached state + unsent changes
+const NS = window.CAFE_NS || 'cafeflow'; // demo pages use their own storage so they never mix with real data
+const KEY = NS + '.v1';      // standalone data
+const SKEY = NS + '.server'; // server mode: cached state + unsent changes
 const $ = (s, r = document) => r.querySelector(s);
 const clone = o => JSON.parse(JSON.stringify(o));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -571,7 +572,7 @@ const ACTIONS = {
   export: exportData,
   reset: () => {
     if (!confirm(`Replace the menu and delete ALL orders${SYNC.mode === 'server' ? ' on every device' : ''}?`)) return;
-    UI.cart = []; UI.cat = 'all'; commit({ t: 'replace', state: seed() }); toast('Reset to demo data');
+    UI.cart = []; UI.cat = 'all'; commit({ t: 'replace', state: window.CafeDemo ? window.CafeDemo.fresh() : seed() }); toast('Reset to demo data');
   },
 };
 

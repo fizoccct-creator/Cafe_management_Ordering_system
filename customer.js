@@ -7,7 +7,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const T = (new URLSearchParams(location.search).get('t') || '').trim().toLowerCase();
 const TAKE = T === 'take';
 const K = (new URLSearchParams(location.search).get('k') || '').trim(); // table key from the QR code
-const KEY = 'cafeflow.my-orders';
+const KEY = (window.CAFE_NS || 'cafeflow') + '.my-orders';
 const C = { menu: null, cat: 'all', cart: [], view: 'menu', orderId: null, order: null, name: '', note: '', busy: false, offline: false };
 const D = $('#dlg');
 let pollTimer = null;

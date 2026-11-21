@@ -267,7 +267,8 @@ function customerOrderStatus(id, res) {
 /* ---------- Static files ---------- */
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
 const PUBLIC = new Set(['/index.html', '/order.html', '/app.js', '/customer.js', '/shared.js', '/styles.css', '/sw.js', '/manifest.webmanifest',
-  '/icons/icon-192.png', '/icons/icon-512.png', '/icons/logo-blue.png', '/icons/logo-white.png']);
+  '/icons/icon-192.png', '/icons/icon-512.png', '/icons/logo-blue.png', '/icons/logo-white.png',
+  '/demo.html', '/demo-app.html', '/demo-order.html', '/demo.js', '/themes/moodboard.css']);
 function serveStatic(p, res) {
   if (p === '/') p = '/index.html';
   if (!PUBLIC.has(p)) { res.writeHead(404); return res.end('Not found'); }

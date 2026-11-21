@@ -95,6 +95,27 @@ Tip: give the server computer a fixed IP in your router so the address never cha
   or **Offline · N waiting**: offline changes are kept and sent when the connection returns.
 - **Settings → Export backup** downloads the menu and full order history. Do it regularly.
 
+## Client demo
+
+`demo.html` is a showcase page for clients, in the "electric" mood board style (blue, lime,
+charcoal, round cards, tilted tags). From it, clients can try the real software:
+
+| Page | What it is |
+|---|---|
+| `demo.html` | Tour page: live numbers, side-by-side guest phone + staff tablet (wide screens), "try it in 3 steps" |
+| `demo-app.html` | The full staff app with the mood board theme |
+| `demo-order.html?t=5` | The guest QR ordering page for Table 5 |
+
+- **No server or sign-in needed.** The demo café (sample menu and a morning of orders) lives in the
+  visitor's browser, separate from real café data. A guest order placed in one tab shows up in the
+  staff app in another tab. **Reset demo** starts over.
+- Works on any static host (e.g. GitHub Pages) and on the café server at `/demo.html`.
+- Because data stays in one browser, a phone and a laptop don't share the demo. To show two
+  devices together, use the server version.
+- **Template, not a fork:** the demo runs the same `app.js`, `customer.js` and `styles.css`.
+  The look comes from `themes/moodboard.css` (tokens and shapes only) and the no-server behaviour
+  from `demo.js`. To make a demo for another café, copy the theme file and change its colours.
+
 ## Configuration (environment variables)
 
 | Variable | Purpose |
@@ -121,5 +142,6 @@ device only, with data stored in that browser. QR ordering needs the server.
 | `app.js`, `index.html`, `styles.css` | The staff app |
 | `order.html`, `customer.js` | Customer QR ordering page |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Install/offline support |
+| `demo.html`, `demo-app.html`, `demo-order.html`, `demo.js`, `themes/moodboard.css` | Client demo (see above) |
 | `render.yaml` | Render deploy blueprint |
 | `package.json` | Node project; one dependency (`pg`) |
