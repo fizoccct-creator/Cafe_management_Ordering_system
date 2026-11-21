@@ -16,8 +16,9 @@ Branded for **Dekad Teknologies** (colours, fonts and logo: see the design docum
    The window shows something like:
 
    ```
-   On this computer:   http://localhost:8080
-   On other devices:   http://192.168.1.20:8080
+   Staff app, this computer:   http://localhost:8080
+   Staff app, other devices:   http://192.168.1.20:8080
+   Staff PIN: 123456   (change it in Settings → Staff PIN)
    ```
 
 3. On every tablet/phone/PC **on the same Wi-Fi**, open the "other devices" address.
@@ -25,7 +26,12 @@ Branded for **Dekad Teknologies** (colours, fonts and logo: see the design docum
    - Kitchen / bar screen → **Kitchen** tab (filter by Bar or Kitchen, turn sound on)
    - Owner → **Orders** (today's numbers) and **Menu**
    - On a tablet, use the browser's *Add to Home Screen* for an app icon.
-4. First run on Windows: allow Node.js through the firewall on **Private networks**
+4. Enter the **Staff PIN** on each staff device (it stays signed in), then change it in
+   Settings → Staff PIN. Forgot it? Stop the server, delete `data/config.json`, start again.
+5. **Customer QR ordering:** Settings → QR ordering → *Table QR codes* → Print. Customers on the
+   café Wi-Fi scan the code on their table, order from their phone and watch the status live.
+   QR orders wait in **Orders** for staff to accept (approval can be turned off).
+6. First run on Windows: allow Node.js through the firewall on **Private networks**
    when asked, otherwise other devices can't connect.
 
 Tip: give the server computer a fixed IP in your router (DHCP reservation) so the
@@ -55,5 +61,6 @@ only, with data stored in that browser.
 |---|---|
 | `server.js` | Café server: serves the app, saves data, pushes live updates |
 | `shared.js` | Seed menu + `applyOp`, the single function that changes data (used by app and server) |
-| `app.js`, `index.html`, `styles.css` | The app |
+| `app.js`, `index.html`, `styles.css` | The staff app |
+| `order.html`, `customer.js` | Customer QR ordering page |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Install/offline support |

@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Status** | Phase 1 (single device) and Phase 2 (multi-device sync on the café network) are done |
+| **Status** | Phases 1–2 done (single device, multi-device sync); Phase 3 customer QR ordering done |
 | **Platform** | Installable web app (PWA) plus a small Node.js server for the café |
 | **Dependencies** | None: plain HTML, CSS and JavaScript, and Node.js's built-in modules |
 
@@ -58,7 +58,7 @@ Menu → Take order → Customise → Route to station → Prepare → Ready →
 |---|---|---|
 | 1 | Order screen, kitchen display, order list and daily summary, menu management, settings, backups, installable on one device | ✅ Done |
 | 2 | Multi-device live sync through a local café server, an offline queue, server-assigned order numbers | ✅ Done |
-| 3 | Customer QR ordering at the table, a customer-facing "now ready" screen | Planned |
+| 3 | Customer QR ordering at the table with live order status, staff approval, printable QR codes, staff PIN | ✅ Done (a "now ready" display screen is still to do) |
 | 4 | Payments and receipts, staff logins and roles, cloud backup and remote owner dashboard, reports beyond today | Planned |
 
 ---
@@ -89,9 +89,23 @@ Menu → Take order → Customise → Route to station → Prepare → Ready →
 - Categories: add, rename, reorder, delete (only when the category has no items)
 - Option groups: reusable across items, with an extra price on each option
 
+### Customer QR ordering
+- Each table has a QR code that opens `order.html?t=<table>`. A takeaway code (`?t=take`) goes at the counter
+- A phone-friendly menu by category, the same option sheet as the counter, a cart, an optional note (and a name for takeaway)
+- After ordering, the customer sees a large order number and live progress: **Sent → Accepted → Preparing → Ready**. Their phone vibrates when the order is ready
+- "Pay at the counter": there is no payment in the app
+- The customer page only uses the public `/api/public/*` endpoints and cannot reach staff data
+
+### QR order approval (staff)
+- QR orders arrive as **Needs approval**. A banner on the Order and Kitchen screens and a badge on Orders alert staff
+- **Accept & send to kitchen** or **Reject** (the customer sees "cancelled"). Approval can be switched off in Settings
+- QR orders carry a **QR** tag on tickets and in order lists
+
 ### Settings
 - Café name, currency symbol, number of tables, alert thresholds
 - Device connection addresses (in server mode)
+- **QR ordering:** turn it on or off, require approval, open the printable QR sheet (3 per row when printed)
+- **Staff PIN:** change it (this signs out other devices), or sign out this device
 - Install the app, export and import backups, reset to the demo data
 
 ---
@@ -122,7 +136,8 @@ Menu → Take order → Customise → Route to station → Prepare → Ready →
 | `styles.css` | Responsive layout, light and dark themes, touch-sized controls |
 | `shared.js` | Demo menu data and **`applyOp`**, the only function that changes data. The app and the server both use it |
 | `app.js` | Screens, user actions, the sync client, the offline queue |
-| `server.js` | Serves the app files, receives changes, saves data, pushes live updates |
+| `server.js` | Serves the app files, checks the staff PIN, receives changes, saves data, pushes live updates, handles customer orders |
+| `order.html`, `customer.js` | The customer QR ordering page |
 | `sw.js` | Service worker that loads the network version first and falls back to the cache |
 | `manifest.webmanifest`, `icons/` | What the PWA needs to be installable |
 
@@ -142,13 +157,14 @@ The app detects the mode on startup by calling `GET /api/state`.
 ```js
 State {
   v: 1,
-  settings:   { cafeName, currency, tables, warnMins, lateMins, numDay, nextNum },
+  settings:   { cafeName, currency, tables, warnMins, lateMins, qrEnabled, qrApproval, numDay, nextNum },
   categories: [ { id, name } ],
   groups:     [ { id, name, multi, options: [ { id, name, price } ] } ],
   items:      [ { id, name, catId, price, station: 'bar'|'kitchen', available, groups: [groupId] } ],
   orders:     [ {
     id, num, type: 'dine'|'take', table, customer, note,
-    status: 'new'|'prep'|'ready'|'done'|'cancelled',
+    status: 'pending'|'new'|'prep'|'ready'|'done'|'cancelled',   // 'pending' = QR order awaiting approval
+    source?: 'qr',
     createdAt, times: { new, prep, ready, done, cancelled },
     lines: [ { itemId, name, price, station, qty, note, done,
                mods: [ { group, name, price } ] } ]
@@ -186,6 +202,17 @@ Every op carries an `opId` (used to drop duplicates) and an `at` time, which the
 | `GET /api/events` | Server-Sent Events: `hello`, `op` (with `ver`), `reload`, `presence` (number of connected devices) |
 | `POST /api/op` | Sends one op and gets back `{ ok, ver, num? }` |
 | `GET /api/backup` | Downloads the full state, including 90 days of orders |
+| `POST /api/login` / `POST /api/logout` | Staff PIN sign-in and sign-out (cookie) |
+| `POST /api/pin` | Change the staff PIN (staff only) |
+| `GET /api/public/menu` | Customer: café name, currency, tables, categories, option groups, items (no orders) |
+| `POST /api/public/order` | Customer: place an order `{ table, customer?, note?, lines: [{ itemId, qty, options: [optionId], note? }] }` |
+| `GET /api/public/order/:id` | Customer: status of one order (by its long, hard-to-guess id) |
+
+### 6.5 Security
+- **Staff PIN.** Every staff endpoint needs the PIN. The server shows a random 6-digit PIN the first time it starts. Signing in sets an `HttpOnly`, `SameSite=Strict` cookie that lasts a year. The PIN is stored as a scrypt hash and sign-in tokens as SHA-256 hashes, in `data/config.json`. After 8 wrong tries from one IP address, sign-in is blocked for 5 minutes.
+- **Customer orders are untrusted.** The server looks up every item, option and price from the menu itself and ignores any prices the phone sends. It also checks the table number, sold-out items, quantity (1–20 per line), number of lines (at most 30) and text lengths.
+- **Rate limit.** One IP address can place at most 6 QR orders in 10 minutes.
+- **Approval.** By default a person checks each QR order before it reaches the kitchen, which stops prank orders.
 
 ### 6.3 Consistency rules
 - **The server decides the order.** Each op it applies raises `ver` by one and is sent to every device.
@@ -213,6 +240,8 @@ Every op carries an `opId` (used to drop duplicates) and an `at` time, which the
 3. On each device on the same Wi-Fi, open the **"On other devices"** address it prints (for example `http://192.168.1.20:8080`).
 4. On Windows, allow Node.js through the firewall on **Private networks** when asked.
 5. Optional: reserve a fixed IP for the server computer in your router.
+6. Note the **Staff PIN** printed in the server window, enter it on each staff device, then change it in Settings → Staff PIN.
+7. Settings → QR ordering → **Table QR codes** → Print. Put one on each table and the takeaway code at the counter.
 
 Custom port: `PORT=9000 node server.js` (PowerShell: `$env:PORT=9000; node server.js`).
 
@@ -222,6 +251,7 @@ Custom port: `PORT=9000 node server.js` (PowerShell: `$env:PORT=9000; node serve
 | Counter tablet | **Order** |
 | Bar or kitchen screen | **Kitchen** (station filter and sound on) |
 | Owner's phone | **Orders** and **Menu** |
+| Customers' phones | Scan the table QR code (they must be on the café Wi-Fi) |
 
 ### Development
 Open `index.html` through any static server (for example `python -m http.server`) to run in standalone mode, or run `node server.js` for server mode. There is no build step.
@@ -255,7 +285,9 @@ All colours are CSS variables at the top of `styles.css`, so the palette can be 
 ## 8. Known limitations
 
 - On the café network the app is served over plain HTTP, so tablets get a home-screen shortcut rather than a full install with offline start-up. A page that is already open keeps working through short drops.
-- No user accounts: anyone on the café Wi-Fi who knows the address can open the app.
+- Staff share one PIN; there are no separate staff accounts or roles yet.
+- Customers must be on the café Wi-Fi to use the QR codes. A guest Wi-Fi network that is isolated from the server will block them.
+- The QR sheet loads its QR library from cdnjs, so the device used to print it needs internet access once.
 - If two devices edit the menu at the same moment, the last save wins.
 - Reporting covers only today; older orders are available through the backup export.
 - No payments, receipts or printer support yet.
@@ -264,9 +296,9 @@ All colours are CSS variables at the top of `styles.css`, so the palette can be 
 
 ## 9. Next steps
 
-1. **Customer QR ordering**: each table's QR code opens a customer menu that sends orders straight into the kitchen queue.
-2. **"Now ready" display**: a customer-facing screen listing order numbers that are ready.
-3. **Staff PIN and roles**: lock Menu and Settings to the owner.
+1. **"Now ready" display**: a customer-facing screen listing order numbers that are ready.
+2. **Staff roles**: separate owner and staff PINs, with Menu and Settings for the owner only.
+3. **Merge a table's QR orders**: show all of a table's orders and its running bill together.
 4. **Ticket printing**: ESC/POS printers at the bar and kitchen.
 5. **Cloud option**: hosted HTTPS for full install and a remote owner dashboard.
 6. **Payments and receipts.**

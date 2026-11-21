@@ -14,7 +14,8 @@ const clock = t => new Date(t).toLocaleTimeString([], { hour: '2-digit', minute:
 const clampInt = (v, lo, hi, d) => { const n = parseInt(v, 10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
 const ACTIVE = ['new', 'prep', 'ready'];
 const FLOW = ['new', 'prep', 'ready', 'done'];
-const LABEL = { new: 'New', prep: 'Preparing', ready: 'Ready', done: 'Completed', cancelled: 'Cancelled' };
+const LABEL = { pending: 'Needs approval', new: 'New', prep: 'Preparing', ready: 'Ready', done: 'Completed', cancelled: 'Cancelled' };
+const QR_LIB = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
 
 /* ---------- Sync state ---------- */
 const SYNC = { mode: 'local', base: null, ver: 0, outbox: [], online: false, skew: 0, devices: 0, urls: [], flushing: false, retry: null, acks: {} };
@@ -35,7 +36,7 @@ function saveCache() { try { localStorage.setItem(SKEY, JSON.stringify({ base: S
 let cached = null;
 try { cached = JSON.parse(localStorage.getItem(SKEY)); } catch { /* ignore */ }
 let S = cached && cached.base ? clone(cached.base) : load();
-const UI = { view: 'pos', cat: 'all', q: '', cart: [], type: 'dine', table: '', customer: '', note: '', showCart: false, station: 'all', ofilter: 'active', sound: false };
+const UI = { view: 'pos', cat: 'all', q: '', cart: [], type: 'dine', table: '', customer: '', note: '', showCart: false, station: 'all', ofilter: 'active', sound: false, locked: false, qrBase: '' };
 let installPrompt = null;
 
 /* Every change goes through commit(): applied here immediately, and sent to the server if there is one. */
@@ -72,6 +73,7 @@ async function flush() {
     for (const op of SYNC.outbox) {
       if (op.sent) continue;
       const r = await fetch('api/op', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(op) });
+      if (r.status === 401) { lock(); break; } // signed out: keep the change, send it after the PIN
       if (r.status >= 400 && r.status < 500) { // rejected: drop it rather than retry forever
         SYNC.outbox = SYNC.outbox.filter(x => x !== op);
         toast('A change was rejected by the server'); rebuild(); continue;
@@ -90,7 +92,8 @@ async function flush() {
   if (SYNC.online && SYNC.outbox.some(o => !o.sent)) flush(); // changes made while we were sending
 }
 function connect() {
-  const es = new EventSource('api/events');
+  if (es) es.close();
+  es = new EventSource('api/events');
   es.addEventListener('hello', e => {
     const d = JSON.parse(e.data);
     SYNC.online = true; SYNC.skew = d.now - Date.now();
@@ -111,10 +114,14 @@ function connect() {
   });
   es.onerror = () => { SYNC.online = false; syncBadge(); };
 }
+function lock() { SYNC.mode = 'server'; UI.locked = true; render(); }
+let es = null;
 async function boot() {
   try {
     const r = await fetch('api/state', { cache: 'no-store' });
+    if (r.status === 401) return lock(); // café server needs the staff PIN on this device
     if (!r.ok) throw new Error('no server');
+    UI.locked = false;
     const d = await r.json();
     SYNC.mode = 'server';
     if (cached) SYNC.outbox = cached.outbox || [];
@@ -148,11 +155,63 @@ const lineKey = l => [l.itemId, l.mods.map(m => m.name).join('|'), l.note].join(
 const lineOf = (it, mods, note, qty) => ({ itemId: it.id, name: it.name, price: it.price, station: it.station, mods, note, qty });
 
 /* ---------- Views ---------- */
+const pendingOrders = () => S.orders.filter(o => o.status === 'pending').sort((a, b) => a.createdAt - b.createdAt);
+const qrPill = o => o.source === 'qr' ? ' <span class="pill qr" title="Ordered by the customer with a QR code">QR</span>' : '';
+function pendingBanner() {
+  const n = pendingOrders().length;
+  return n ? `<button class="banner" data-act="goPending">📱 <b>${n} QR order${n === 1 ? '' : 's'}</b> waiting for approval — tap to review</button>` : '';
+}
+
+function vLogin() {
+  return `<form class="login card" id="loginForm">
+    <picture><source srcset="icons/logo-white.png" media="(prefers-color-scheme: dark)"><img src="icons/logo-blue.png" alt="dekad. teknologies" width="160" height="50"></picture>
+    <h2>Staff sign-in</h2>
+    <p class="muted" style="margin:0">Enter the staff PIN to use CafeFlow on this device. It stays signed in.</p>
+    <input class="input" name="pin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="current-password" maxlength="8" required aria-label="Staff PIN" autofocus>
+    <button class="btn primary">Unlock</button>
+    <p class="muted sm" style="margin:0">The first PIN is shown in the café server window. Customers order at <b>order.html</b> via the table QR codes.</p>
+  </form>`;
+}
+
+function vQR() {
+  const urls = SYNC.urls.length ? SYNC.urls : [location.origin];
+  const base = urls.includes(UI.qrBase) ? UI.qrBase : urls[0];
+  const off = S.settings.qrEnabled === false;
+  const tables = Array.from({ length: S.settings.tables }, (_, k) => String(k + 1));
+  const card = (t, label) => {
+    const url = `${base}/order.html?t=${t}`;
+    return `<div class="qrcard"><div class="qr-cafe">${esc(S.settings.cafeName)}</div><div class="qr-table">${label}</div>
+      <div class="qr-code" data-url="${esc(url)}"></div><div class="qr-hint">Scan to order · Pay at the counter</div><div class="qr-url">${esc(url)}</div></div>`;
+  };
+  return `<div class="toolbar no-print"><div class="row"><a class="btn ghost sm" href="#settings">← Settings</a><h2>Table QR codes</h2></div>
+      <div class="row">${urls.length > 1 ? `<label class="lbl">Server address<select class="input" id="qrBase">${urls.map(u => `<option ${u === base ? 'selected' : ''}>${esc(u)}</option>`).join('')}</select></label>` : ''}
+      <button class="btn primary" data-act="print">🖨 Print</button></div></div>
+    ${off ? '<p class="banner no-print">QR ordering is turned off in Settings, so customers will see a "paused" message.</p>' : ''}
+    <p class="muted sm no-print">Customers must be on the café Wi-Fi. Print, cut out and place one on each table. The takeaway code goes at the counter.</p>
+    <div class="qrgrid">${tables.map(t => card(t, 'Table ' + t)).join('')}${card('take', 'Takeaway')}</div>`;
+}
+function loadScript(src) {
+  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+}
+async function drawQRs() {
+  try { if (!window.QRCode) await loadScript(QR_LIB); } catch {
+    document.querySelectorAll('.qr-code').forEach(el => { el.textContent = 'QR codes need an internet connection the first time.'; });
+    return;
+  }
+  document.querySelectorAll('.qr-code[data-url]').forEach(el => {
+    if (el.dataset.drawn === el.dataset.url) return;
+    el.innerHTML = '';
+    new window.QRCode(el, { text: el.dataset.url, width: 360, height: 360, colorDark: '#1E1E1E', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M });
+    el.dataset.drawn = el.dataset.url;
+  });
+}
+
 function vPos() {
   const n = UI.cart.reduce((a, l) => a + l.qty, 0), tot = UI.cart.reduce((a, l) => a + lineTotal(l), 0);
   const chip = (id, label) => `<button class="chip ${UI.cat === id ? 'on' : ''}" data-act="cat" data-id="${id}">${esc(label)}</button>`;
   return `<div class="pos ${UI.showCart ? 'show-cart' : ''}">
     <section class="menu-pane">
+      ${pendingBanner()}
       <input id="q" class="input" type="search" placeholder="Search menu…" value="${esc(UI.q)}" aria-label="Search menu">
       <div class="chips">${chip('all', 'All')}${S.categories.map(c => chip(c.id, c.name)).join('')}</div>
       <div id="grid" class="grid">${gridHTML()}</div>
@@ -198,7 +257,7 @@ function vKitchen() {
     const list = act.filter(o => o.status === s).map(o => ticket(o, st)).filter(Boolean);
     return `<section class="kcol k-${s}"><h2>${LABEL[s]}<span class="count">${list.length}</span></h2>${list.join('') || '<p class="empty">Nothing here</p>'}</section>`;
   };
-  return `<div class="toolbar"><div class="chips">${[['all', 'All stations'], ['bar', 'Bar · drinks'], ['kitchen', 'Kitchen · food']].map(([id, l]) => `<button class="chip ${st === id ? 'on' : ''}" data-act="station" data-id="${id}">${l}</button>`).join('')}</div>
+  return `${pendingBanner()}<div class="toolbar"><div class="chips">${[['all', 'All stations'], ['bar', 'Bar · drinks'], ['kitchen', 'Kitchen · food']].map(([id, l]) => `<button class="chip ${st === id ? 'on' : ''}" data-act="station" data-id="${id}">${l}</button>`).join('')}</div>
     <button class="btn ghost sm" data-act="sound">${UI.sound ? '🔔 Sound on' : '🔕 Sound off'}</button></div>
     <div class="kboard">${col('new')}${col('prep')}${col('ready')}</div>`;
 }
@@ -207,7 +266,7 @@ function ticket(o, st) {
   if (!lines.length) return '';
   const m = mins(o.createdAt);
   const age = o.status === 'ready' ? '' : m >= S.settings.lateMins ? 'late' : m >= S.settings.warnMins ? 'warn' : '';
-  return `<article class="ticket ${age}"><header><b class="onum">#${o.num}</b><span class="who">${who(o)}</span><span class="age" title="Ordered at ${clock(o.createdAt)}">${m} min</span></header>
+  return `<article class="ticket ${age}"><header><b class="onum">#${o.num}</b><span class="who">${who(o)}${qrPill(o)}</span><span class="age" title="Ordered at ${clock(o.createdAt)}">${m} min</span></header>
     <ul>${lines.map(([l, i]) => `<li class="${l.done ? 'done' : ''}" data-act="tline" data-o="${o.id}" data-i="${i}" title="Tap to tick off"><b>${l.qty}×</b> ${esc(l.name)}${modsText(l)}${l.note ? `<div class="line-note">“${esc(l.note)}”</div>` : ''}</li>`).join('')}</ul>
     ${o.note ? `<p class="onote">📝 ${esc(o.note)}</p>` : ''}
     <footer>${o.status !== 'new' ? `<button class="btn ghost sm" data-act="back" data-o="${o.id}" aria-label="Move back a step">↩</button>` : ''}<button class="btn primary grow" data-act="adv" data-o="${o.id}">${nextLabel(o)}</button></footer></article>`;
@@ -228,7 +287,14 @@ function vOrders() {
   const f = UI.ofilter;
   const list = tod.filter(o => match(o, f)).sort((a, b) => b.createdAt - a.createdAt);
   const stat = (k, v) => `<div class="stat"><div class="muted sm">${k}</div><div class="stat-v">${v}</div></div>`;
-  return `<div class="stats">${stat('Orders today', valid.length)}${stat('Items made', itemsMade)}${stat('Order value', money(value))}${stat('Avg. time to ready', avg === null ? '—' : avg + ' min')}</div>
+  const pend = pendingOrders();
+  const approvals = pend.length ? `<section class="card" id="approvals" style="margin-bottom:16px"><div class="card-head"><h2>📱 QR orders to approve · ${pend.length}</h2></div>
+    <p class="muted sm" style="margin:0">Check the table is occupied and the order looks right. Accepting sends it to the kitchen.</p>
+    ${pend.map(o => `<div class="approve"><div class="row"><b class="onum">#${o.num}</b><span class="grow"><b>${who(o)}</b> <span class="muted">· ${clock(o.createdAt)} · ${mins(o.createdAt)} min ago</span></span><b>${money(orderTotal(o))}</b></div>
+      <ul>${o.lines.map(l => `<li><b>${l.qty}×</b> ${esc(l.name)}${modsText(l)}${l.note ? `<div class="line-note">“${esc(l.note)}”</div>` : ''}</li>`).join('')}</ul>
+      ${o.note ? `<p class="onote">📝 ${esc(o.note)}</p>` : ''}
+      <div class="row"><button class="btn ghost sm danger" data-act="reject" data-o="${o.id}">Reject</button><button class="btn primary grow" data-act="accept" data-o="${o.id}">Accept & send to kitchen</button></div></div>`).join('')}</section>` : '';
+  return `${approvals}<div class="stats">${stat('Orders today', valid.length)}${stat('Items made', itemsMade)}${stat('Order value', money(value))}${stat('Avg. time to ready', avg === null ? '—' : avg + ' min')}</div>
     <div class="orders-wrap">
       <section class="card"><div class="card-head"><h2>Today's orders</h2>
         <div class="seg sm">${[['active', 'Active'], ['done', 'Completed'], ['cancelled', 'Cancelled']].map(([id, l]) => `<button class="${f === id ? 'on' : ''}" data-act="ofilter" data-id="${id}">${l} <span class="muted">${tod.filter(o => match(o, id)).length}</span></button>`).join('')}</div></div>
@@ -240,7 +306,7 @@ function orow(o) {
   const acts = ACTIVE.includes(o.status)
     ? `<button class="btn ghost sm danger" data-act="cancel" data-o="${o.id}">Cancel</button><button class="btn primary sm" data-act="adv" data-o="${o.id}">${nextLabel(o)}</button>`
     : o.status === 'cancelled' ? `<button class="btn ghost sm" data-act="restore" data-o="${o.id}">Restore</button>` : '';
-  return `<div class="orow"><div class="orow-main"><div><b>#${o.num}</b> <span class="muted">${clock(o.createdAt)} · ${who(o)}</span> <span class="pill s-${o.status}">${LABEL[o.status]}</span></div>
+  return `<div class="orow"><div class="orow-main"><div><b>#${o.num}</b> <span class="muted">${clock(o.createdAt)} · ${who(o)}</span> <span class="pill s-${o.status}">${LABEL[o.status]}</span>${qrPill(o)}</div>
     <div class="muted sm clip">${o.lines.map(l => `${l.qty}× ${esc(l.name)}`).join(', ')}</div></div>
     <b class="orow-total">${money(orderTotal(o))}</b><div class="orow-acts">${acts}</div></div>`;
 }
@@ -289,6 +355,14 @@ function vSettings() {
         <label class="lbl grow">Ticket turns red after (min)<input class="input" name="lateMins" type="number" min="2" max="240" value="${s.lateMins}"></label></div>
       <button class="btn primary">Save settings</button></form></section>
     ${devices}
+    ${server ? `<section class="card"><h2>QR ordering</h2><form id="qrForm" class="stack">
+      <label class="opt inline"><input type="checkbox" name="qrEnabled" ${s.qrEnabled !== false ? 'checked' : ''}><span>Customers can order by scanning a table QR code</span></label>
+      <label class="opt inline"><input type="checkbox" name="qrApproval" ${s.qrApproval !== false ? 'checked' : ''}><span>Staff approve QR orders before they reach the kitchen</span></label>
+      <div class="row"><button class="btn primary">Save</button><a class="btn" href="#qr">🖨 Table QR codes</a></div></form></section>
+    <section class="card"><h2>Staff PIN</h2><form id="pinForm" class="stack">
+      <p class="muted" style="margin:0">Staff screens need this PIN; customers only see the ordering page. Changing it signs out every other device.</p>
+      <label class="lbl">New PIN (4–8 digits)<input class="input" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,8}" maxlength="8" autocomplete="new-password" required></label>
+      <div class="row"><button class="btn primary">Change PIN</button><button type="button" class="btn ghost" data-act="logout">Sign out this device</button></div></form></section>` : ''}
     <section class="card"><h2>Install</h2>
       <p class="muted">Android/Chrome/Edge: use the button or the browser menu → <b>Install app</b>. iPad/iPhone: Safari → Share → <b>Add to Home Screen</b>.</p>
       <button class="btn primary" data-act="install" ${installPrompt ? '' : 'hidden'}>Install app</button></section>
@@ -454,6 +528,16 @@ const ACTIONS = {
   cancel: d => { const o = findOrder(d.o); if (o && confirm(`Cancel order #${o.num}?`)) commit({ t: 'status', id: o.id, status: 'cancelled' }); },
   restore: d => commit({ t: 'status', id: d.o, status: 'new' }),
   ofilter: d => { UI.ofilter = d.id; render(); },
+  goPending: () => { if (location.hash === '#orders') $('#approvals')?.scrollIntoView({ behavior: 'smooth' }); else location.hash = '#orders'; },
+  accept: d => { const o = findOrder(d.o); if (o && o.status === 'pending') { commit({ t: 'status', id: o.id, status: 'new' }); toast(`Order #${o.num} sent to the kitchen`); } },
+  reject: d => { const o = findOrder(d.o); if (o && confirm(`Reject QR order #${o.num} (${o.type === 'dine' ? 'table ' + o.table : 'takeaway'})? The customer will see it was cancelled.`)) commit({ t: 'status', id: o.id, status: 'cancelled' }); },
+  print: () => window.print(),
+  logout: async () => {
+    if (!confirm('Sign this device out? The staff PIN will be needed again.')) return;
+    try { await fetch('api/logout', { method: 'POST' }); } catch { /* offline */ }
+    try { localStorage.removeItem(SKEY); } catch { /* ignore */ }
+    location.reload();
+  },
   avail: (d, el) => { const it = S.items.find(i => i.id === d.id); if (!it) return; commit({ t: 'avail', id: it.id, available: el.checked }); toast(`${it.name} ${el.checked ? 'is available again' : 'marked sold out'}`); },
   newItem: () => editItem(null),
   editItem: d => editItem(d.id),
@@ -491,8 +575,41 @@ document.addEventListener('input', e => {
   else if (t.id === 'cust') UI.customer = t.value;
   else if (t.id === 'onote') UI.note = t.value;
 });
-document.addEventListener('submit', e => {
-  if (e.target.id !== 'setForm') return;
+document.addEventListener('submit', async e => {
+  const id = e.target.id;
+  if (id === 'loginForm') {
+    e.preventDefault();
+    const pin = new FormData(e.target).get('pin');
+    try {
+      const r = await fetch('api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); toast(d.error || 'Could not sign in'); e.target.reset(); return; }
+      UI.locked = false; document.body.classList.remove('locked');
+      SYNC.outbox.forEach(op => { op.sent = false; });
+      await boot();
+    } catch { toast('Cannot reach the café server'); }
+    return;
+  }
+  if (id === 'qrForm') {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    commit({ t: 'settings', settings: { qrEnabled: f.get('qrEnabled') === 'on', qrApproval: f.get('qrApproval') === 'on' } });
+    toast('QR ordering settings saved');
+    return;
+  }
+  if (id === 'pinForm') {
+    e.preventDefault();
+    const pin = String(new FormData(e.target).get('pin') || '');
+    if (!/^\d{4,8}$/.test(pin)) return toast('PIN must be 4–8 digits');
+    if (!confirm('Change the staff PIN? Every other device will need the new PIN.')) return;
+    try {
+      const r = await fetch('api/pin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) });
+      const d = await r.json().catch(() => ({}));
+      toast(r.ok ? 'Staff PIN changed' : d.error || 'Could not change the PIN');
+      if (r.ok) e.target.reset();
+    } catch { toast('Cannot reach the café server'); }
+    return;
+  }
+  if (id !== 'setForm') return;
   e.preventDefault();
   const f = new FormData(e.target);
   const warnMins = clampInt(f.get('warnMins'), 1, 120, 8);
@@ -506,6 +623,7 @@ document.addEventListener('submit', e => {
   toast('Settings saved');
 });
 document.addEventListener('change', async e => {
+  if (e.target.id === 'qrBase') { UI.qrBase = e.target.value; render(); return; }
   if (e.target.id !== 'importFile') return;
   const file = e.target.files[0]; if (!file) return;
   try {
@@ -536,8 +654,10 @@ function toast(msg) {
   clearTimeout(tt); tt = setTimeout(() => T.classList.remove('show'), 2400);
 }
 
-const VIEWS = { pos: vPos, kitchen: vKitchen, orders: vOrders, menu: vMenu, settings: vSettings };
+const VIEWS = { pos: vPos, kitchen: vKitchen, orders: vOrders, menu: vMenu, settings: vSettings, qr: vQR };
 function render() {
+  document.body.classList.toggle('locked', UI.locked);
+  if (UI.locked) { if (!$('#loginForm')) $('#main').innerHTML = vLogin(); return; }
   // Live updates from other devices re-render often: keep the cursor where the user is typing.
   const a = document.activeElement;
   const fid = a && a.id && $('#main').contains(a) ? a.id : null;
@@ -546,7 +666,9 @@ function render() {
   document.querySelectorAll('.nav a').forEach(el => el.classList.toggle('on', el.dataset.view === UI.view));
   const live = S.orders.filter(o => o.status === 'new' || o.status === 'prep').length;
   const b = $('#kbadge'); b.textContent = live; b.hidden = !live;
+  const np = pendingOrders().length, ob = $('#obadge'); ob.textContent = np; ob.hidden = !np;
   $('#main').innerHTML = VIEWS[UI.view]();
+  if (UI.view === 'qr') drawQRs();
   syncBadge();
   if (fid) {
     const n = document.getElementById(fid);

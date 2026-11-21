@@ -21,7 +21,7 @@
     const it = (name, cat, price, station, groups) => ({ id: uid(), name, catId: cat.id, price, station, available: true, groups: groups.map(x => x.id) });
     return {
       v: 1,
-      settings: { cafeName: 'My Café', currency: '$', tables: 12, warnMins: 8, lateMins: 15, numDay: '', nextNum: 1 },
+      settings: { cafeName: 'My Café', currency: '$', tables: 12, warnMins: 8, lateMins: 15, qrEnabled: true, qrApproval: true, numDay: '', nextNum: 1 },
       categories: cats,
       groups: [size, temp, milk, sweet, extra, serve],
       items: [
@@ -42,7 +42,7 @@
     };
   }
 
-  const EDITABLE = ['cafeName', 'currency', 'tables', 'warnMins', 'lateMins'];
+  const EDITABLE = ['cafeName', 'currency', 'tables', 'warnMins', 'lateMins', 'qrEnabled', 'qrApproval'];
 
   // Mutates S. For addOrder it also writes the assigned number back onto op.order.num.
   function applyOp(S, op) {
@@ -55,7 +55,8 @@
         if (op.order.num == null) op.order.num = s.nextNum;
         s.nextNum = Math.max(s.nextNum, op.order.num + 1);
         const o = copy(op.order);
-        o.status = 'new'; o.createdAt = op.at; o.times = { new: op.at };
+        o.status = o.status === 'pending' ? 'pending' : 'new'; // QR orders may wait for staff approval
+        o.createdAt = op.at; o.times = { [o.status]: op.at };
         S.orders.push(o);
         return;
       }
