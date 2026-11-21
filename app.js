@@ -18,7 +18,7 @@ const LABEL = { pending: 'Needs approval', new: 'New', prep: 'Preparing', ready:
 const QR_LIB = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
 
 /* ---------- Sync state ---------- */
-const SYNC = { mode: 'local', base: null, ver: 0, outbox: [], online: false, skew: 0, devices: 0, urls: [], flushing: false, retry: null, acks: {} };
+const SYNC = { mode: 'local', base: null, ver: 0, outbox: [], online: false, skew: 0, devices: 0, urls: [], cloud: false, qrKeys: {}, flushing: false, retry: null, acks: {} };
 const now = () => Date.now() + SYNC.skew; // server-aligned clock so ticket timers agree on every device
 const mins = t => Math.max(0, Math.floor((now() - t) / 60000));
 
@@ -58,6 +58,7 @@ function rebuild() { // visible state = last server state + my changes the serve
 function adopt(d) {
   SYNC.base = d.state; SYNC.ver = d.ver; SYNC.skew = d.now - Date.now();
   if (d.urls) SYNC.urls = d.urls;
+  SYNC.cloud = !!d.cloud; if (d.qrKeys) SYNC.qrKeys = d.qrKeys;
   const seen = new Set(d.recentOps || []);
   SYNC.outbox = SYNC.outbox.filter(op => !seen.has(op.opId));
   SYNC.outbox.forEach(op => { op.sent = false; }); // server doesn't have these: send again
@@ -179,7 +180,7 @@ function vQR() {
   const off = S.settings.qrEnabled === false;
   const tables = Array.from({ length: S.settings.tables }, (_, k) => String(k + 1));
   const card = (t, label) => {
-    const url = `${base}/order.html?t=${t}`;
+    const url = `${base}/order.html?t=${t}&k=${SYNC.qrKeys[t] || ""}`;
     return `<div class="qrcard"><div class="qr-cafe">${esc(S.settings.cafeName)}</div><div class="qr-table">${label}</div>
       <div class="qr-code" data-url="${esc(url)}"></div><div class="qr-hint">Scan to order · Pay at the counter</div><div class="qr-url">${esc(url)}</div></div>`;
   };
@@ -187,7 +188,7 @@ function vQR() {
       <div class="row">${urls.length > 1 ? `<label class="lbl">Server address<select class="input" id="qrBase">${urls.map(u => `<option ${u === base ? 'selected' : ''}>${esc(u)}</option>`).join('')}</select></label>` : ''}
       <button class="btn primary" data-act="print">🖨 Print</button></div></div>
     ${off ? '<p class="banner no-print">QR ordering is turned off in Settings, so customers will see a "paused" message.</p>' : ''}
-    <p class="muted sm no-print">Customers must be on the café Wi-Fi. Print, cut out and place one on each table. The takeaway code goes at the counter.</p>
+    <p class="muted sm no-print">${SYNC.cloud ? 'Customers can scan from anywhere with mobile data or Wi-Fi.' : 'Customers must be on the café Wi-Fi.'} Each code only works for its own table. Print, cut out and place one on each table. The takeaway code goes at the counter.</p>
     <div class="qrgrid">${tables.map(t => card(t, 'Table ' + t)).join('')}${card('take', 'Takeaway')}</div>`;
 }
 function loadScript(src) {
@@ -341,7 +342,7 @@ function vSettings() {
   const s = S.settings, server = SYNC.mode === 'server';
   const devices = server
     ? `<section class="card"><h2>Connect devices</h2>
-        <p class="muted">Every tablet, phone or PC on the café Wi-Fi can open CafeFlow at:</p>
+        <p class="muted">${SYNC.cloud ? 'CafeFlow is in the cloud. Open it on any staff device, anywhere, at:' : 'Every tablet, phone or PC on the café Wi-Fi can open CafeFlow at:'}</p>
         ${SYNC.urls.length ? SYNC.urls.map(u => `<p><code class="addr">${esc(u)}</code></p>`).join('') : '<p class="muted">(Address shown in the server window.)</p>'}
         <p class="muted sm">Use one device as the counter (Order) and another as the kitchen screen (Kitchen). Everything updates live. On a phone or tablet, use the browser's <b>Add to Home Screen</b> to get an app icon.</p></section>`
     : `<section class="card"><h2>This device only</h2>
@@ -358,7 +359,9 @@ function vSettings() {
     ${server ? `<section class="card"><h2>QR ordering</h2><form id="qrForm" class="stack">
       <label class="opt inline"><input type="checkbox" name="qrEnabled" ${s.qrEnabled !== false ? 'checked' : ''}><span>Customers can order by scanning a table QR code</span></label>
       <label class="opt inline"><input type="checkbox" name="qrApproval" ${s.qrApproval !== false ? 'checked' : ''}><span>Staff approve QR orders before they reach the kitchen</span></label>
-      <div class="row"><button class="btn primary">Save</button><a class="btn" href="#qr">🖨 Table QR codes</a></div></form></section>
+      <div class="row"><button class="btn primary">Save</button><a class="btn" href="#qr">🖨 Table QR codes</a></div>
+      <p class="muted sm" style="margin:0">If QR codes were photographed or shared, make new ones: every printed code stops working.</p>
+      <div class="row"><button type="button" class="btn ghost danger sm" data-act="qrRotate">Make new QR codes</button></div></form></section>
     <section class="card"><h2>Staff PIN</h2><form id="pinForm" class="stack">
       <p class="muted" style="margin:0">Staff screens need this PIN; customers only see the ordering page. Changing it signs out every other device.</p>
       <label class="lbl">New PIN (4–8 digits)<input class="input" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,8}" maxlength="8" autocomplete="new-password" required></label>
@@ -532,6 +535,15 @@ const ACTIONS = {
   accept: d => { const o = findOrder(d.o); if (o && o.status === 'pending') { commit({ t: 'status', id: o.id, status: 'new' }); toast(`Order #${o.num} sent to the kitchen`); } },
   reject: d => { const o = findOrder(d.o); if (o && confirm(`Reject QR order #${o.num} (${o.type === 'dine' ? 'table ' + o.table : 'takeaway'})? The customer will see it was cancelled.`)) commit({ t: 'status', id: o.id, status: 'cancelled' }); },
   print: () => window.print(),
+  qrRotate: async () => {
+    if (!confirm('Make new QR codes? Every QR code already printed will stop working, so you must print and replace them all.')) return;
+    try {
+      const r = await fetch('api/qr-rotate', { method: 'POST' });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) return toast(d.error || 'Could not make new QR codes');
+      SYNC.qrKeys = d.qrKeys; toast('New QR codes made. Print them now.'); location.hash = '#qr';
+    } catch { toast('Cannot reach the café server'); }
+  },
   logout: async () => {
     if (!confirm('Sign this device out? The staff PIN will be needed again.')) return;
     try { await fetch('api/logout', { method: 'POST' }); } catch { /* offline */ }

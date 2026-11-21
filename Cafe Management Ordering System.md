@@ -4,9 +4,9 @@
 
 | | |
 |---|---|
-| **Status** | Phases 1–2 done (single device, multi-device sync); Phase 3 customer QR ordering done |
-| **Platform** | Installable web app (PWA) plus a small Node.js server for the café |
-| **Dependencies** | None: plain HTML, CSS and JavaScript, and Node.js's built-in modules |
+| **Status** | Phases 1–3 done (single device, multi-device sync, customer QR ordering); cloud version ready to deploy |
+| **Platform** | Installable web app (PWA) plus a small Node.js server, run on a café computer or in the cloud (Render + Neon Postgres) |
+| **Dependencies** | Plain HTML, CSS and JavaScript in the browser; the server uses Node.js built-ins plus `pg` (Postgres driver) |
 
 ---
 
@@ -49,8 +49,9 @@ Menu → Take order → Customise → Route to station → Prepare → Ready →
 | Decision | Choice | Why |
 |---|---|---|
 | App type | **Progressive Web App (PWA)** | One codebase runs on Android, iOS/iPadOS and Windows, installs from the browser, works offline, and needs no app-store approval |
-| Sync | **A local server on the café network** | No accounts or monthly cost, it keeps working when the internet is down, and the data stays in the café |
-| Stack | Vanilla JavaScript and Node.js built-in modules | No build step and no dependencies to maintain, so it is easy for one person to keep running |
+| Sync | **One small Node server, run locally or in the cloud** | Café computer: no accounts or cost, works when the internet is down. Cloud: customers scan from their own mobile data, HTTPS gives a full app install, the owner can check from anywhere |
+| Cloud host | **Render (app) + Neon (Postgres)** | Both have free tiers, Render deploys straight from GitHub, and Neon keeps data permanently (Render's free disk is wiped on restart) |
+| Stack | Vanilla JavaScript, Node.js built-ins, one dependency (`pg`) | No build step and almost nothing to maintain, so it is easy for one person to keep running |
 
 ### 2.2 Phased roadmap
 
@@ -59,7 +60,8 @@ Menu → Take order → Customise → Route to station → Prepare → Ready →
 | 1 | Order screen, kitchen display, order list and daily summary, menu management, settings, backups, installable on one device | ✅ Done |
 | 2 | Multi-device live sync through a local café server, an offline queue, server-assigned order numbers | ✅ Done |
 | 3 | Customer QR ordering at the table with live order status, staff approval, printable QR codes, staff PIN | ✅ Done (a "now ready" display screen is still to do) |
-| 4 | Payments and receipts, staff logins and roles, cloud backup and remote owner dashboard, reports beyond today | Planned |
+| 3b | Cloud version: Postgres storage, HTTPS, signed table QR codes, Render blueprint | ✅ Done (ready to deploy) |
+| 4 | Payments and receipts, staff logins and roles, reports beyond today | Planned |
 
 ---
 
@@ -112,6 +114,7 @@ Menu → Take order → Customise → Route to station → Prepare → Ready →
 
 ## 4. Architecture
 
+### Café computer
 ```
             Café Wi-Fi (LAN)
  ┌──────────────┐        ┌──────────────┐        ┌──────────────┐
@@ -122,11 +125,29 @@ Menu → Take order → Customise → Route to station → Prepare → Ready →
         └────────────┬───────────┴───────────┬───────────┘
                      ▼                       ▲
               ┌─────────────────────────────────────┐
-              │  server.js  (Node, no dependencies)  │
+              │  server.js  (Node)                   │
               │  applyOp() → version++ → broadcast   │
               │  data/cafeflow.json  (atomic write)  │
               └─────────────────────────────────────┘
 ```
+
+### Cloud
+```
+ Customers' phones (mobile data)      Staff devices (anywhere)
+   order.html?t=5&k=…                   index.html (PIN)
+          │  HTTPS                          │  HTTPS + SSE
+          ▼                                 ▼
+   ┌──────────────────────────────────────────────┐
+   │ Render web service: server.js  (same code)    │
+   │ state in memory → debounced writes            │
+   └───────────────────────┬──────────────────────┘
+                           │ DATABASE_URL (TLS)
+                   ┌───────▼────────┐
+                   │ Neon Postgres  │  cafeflow_kv (menu, settings, PIN)
+                   │                │  cafeflow_orders (one row per order)
+                   └────────────────┘
+```
+The server keeps the whole state in memory, as it does locally, and writes only what changed to Postgres. One instance serves everything, which suits a single café; live updates (SSE) need all devices on the same instance.
 
 ### 4.1 Files
 
@@ -136,7 +157,9 @@ Menu → Take order → Customise → Route to station → Prepare → Ready →
 | `styles.css` | Responsive layout, light and dark themes, touch-sized controls |
 | `shared.js` | Demo menu data and **`applyOp`**, the only function that changes data. The app and the server both use it |
 | `app.js` | Screens, user actions, the sync client, the offline queue |
-| `server.js` | Serves the app files, checks the staff PIN, receives changes, saves data, pushes live updates, handles customer orders |
+| `server.js` | Serves the app files, checks the staff PIN, receives changes, pushes live updates, handles customer orders |
+| `storage.js` | Saves to Postgres when `DATABASE_URL` is set, otherwise to files in `data/` |
+| `render.yaml` | Render deploy blueprint |
 | `order.html`, `customer.js` | The customer QR ordering page |
 | `sw.js` | Service worker that loads the network version first and falls back to the cache |
 | `manifest.webmanifest`, `icons/` | What the PWA needs to be installable |
@@ -146,7 +169,8 @@ Menu → Take order → Customise → Route to station → Prepare → Ready →
 | Mode | When | Where data lives |
 |---|---|---|
 | **Standalone** | The app is opened without the server (any static host) | That browser's `localStorage`. Tabs on the same device stay in sync |
-| **Server** | The app is opened from `node server.js` | The server file `data/cafeflow.json`. Every device stays in sync live |
+| **Café server** | The app is opened from `node server.js` on a café computer | `data/cafeflow.json` on that computer. Every device on the Wi-Fi stays in sync live |
+| **Cloud** | The app is opened from the Render address | Neon Postgres. Every device, anywhere, stays in sync live |
 
 The app detects the mode on startup by calling `GET /api/state`.
 
@@ -198,43 +222,61 @@ Every op carries an `opId` (used to drop duplicates) and an `at` time, which the
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /api/state` | `{ ver, now, recentOps, urls, state }`. `state` holds the menu, the last 36 hours of orders, and any orders still active |
+| `GET /api/state` | `{ ver, now, recentOps, urls, cloud, qrKeys, state }`. `state` holds the menu, the last 36 hours of orders, and any orders still active |
 | `GET /api/events` | Server-Sent Events: `hello`, `op` (with `ver`), `reload`, `presence` (number of connected devices) |
 | `POST /api/op` | Sends one op and gets back `{ ok, ver, num? }` |
 | `GET /api/backup` | Downloads the full state, including 90 days of orders |
 | `POST /api/login` / `POST /api/logout` | Staff PIN sign-in and sign-out (cookie) |
 | `POST /api/pin` | Change the staff PIN (staff only) |
-| `GET /api/public/menu` | Customer: café name, currency, tables, categories, option groups, items (no orders) |
-| `POST /api/public/order` | Customer: place an order `{ table, customer?, note?, lines: [{ itemId, qty, options: [optionId], note? }] }` |
+| `POST /api/qr-rotate` | Make a new QR signing secret, so every printed code stops working (staff only) |
+| `GET /api/public/menu?t=&k=` | Customer: café name, currency, tables, `tableOk`, categories, option groups, items (no orders) |
+| `GET /healthz` | Health check for the host |
+| `POST /api/public/order` | Customer: place an order `{ table, key, customer?, note?, lines: [{ itemId, qty, options: [optionId], note? }] }` |
 | `GET /api/public/order/:id` | Customer: status of one order (by its long, hard-to-guess id) |
-
-### 6.5 Security
-- **Staff PIN.** Every staff endpoint needs the PIN. The server shows a random 6-digit PIN the first time it starts. Signing in sets an `HttpOnly`, `SameSite=Strict` cookie that lasts a year. The PIN is stored as a scrypt hash and sign-in tokens as SHA-256 hashes, in `data/config.json`. After 8 wrong tries from one IP address, sign-in is blocked for 5 minutes.
-- **Customer orders are untrusted.** The server looks up every item, option and price from the menu itself and ignores any prices the phone sends. It also checks the table number, sold-out items, quantity (1–20 per line), number of lines (at most 30) and text lengths.
-- **Rate limit.** One IP address can place at most 6 QR orders in 10 minutes.
-- **Approval.** By default a person checks each QR order before it reaches the kitchen, which stops prank orders.
 
 ### 6.3 Consistency rules
 - **The server decides the order.** Each op it applies raises `ver` by one and is sent to every device.
 - **Devices check for gaps.** If a device receives `ver` other than its own `ver + 1`, it reloads the full state.
 - **Changes show immediately.** What a device displays is the last state the server confirmed, plus that device's own changes the server hasn't confirmed yet.
 - **Offline queue.** Unsent ops are kept in `localStorage` and retried every 3 seconds. The header shows **Offline · N waiting**.
-- **Retries are safe.** The server remembers the last 500 `opId`s and ignores repeats.
+- **Retries are safe.** The server remembers the last 300 `opId`s and ignores repeats.
 - **One clock.** The server sets every timestamp, and each device adjusts for the difference between its clock and the server's, so ticket timers agree on every screen.
 - **Conflicts.** Order changes are small and target one order, so they don't collide. Menu edits are last-write-wins.
 
 ### 6.4 Storage
-- Each save is written to a temporary file that then replaces `data/cafeflow.json`, so a crash never leaves a half-written file. Writes are debounced (200 ms), and pending changes are flushed on Ctrl+C.
+- **Local files:** each save writes a temporary file that then replaces `data/cafeflow.json`, so a crash never leaves a half-written file.
+- **Postgres:** `cafeflow_kv` holds a `meta` row (menu, settings, version) and a `config` row (PIN hash, sign-in tokens, QR secret); `cafeflow_orders` has one row per order. Each save is one transaction that writes the meta row and only the orders that changed, which keeps database traffic low on free tiers.
+- Writes are debounced (200 ms) and run one at a time. A failed write is retried with back-off without losing the changes. On shutdown (Ctrl+C, or the host's SIGTERM during deploys and restarts) pending changes are written first.
 - The server keeps 90 days of orders and sends devices only recent and active orders.
+
+### 6.5 Security
+- **Staff PIN.** Every staff endpoint needs the PIN. The server shows a random 6-digit PIN the first time it starts. Signing in sets an `HttpOnly`, `SameSite=Strict` cookie that lasts a year. The PIN is stored as a scrypt hash and sign-in tokens as SHA-256 hashes, in the config store (`data/config.json`, or the `config` row in Postgres). After 8 wrong tries from one IP address, sign-in is blocked for 5 minutes.
+- **Customer orders are untrusted.** The server looks up every item, option and price from the menu itself and ignores any prices the phone sends. It also checks the table number, sold-out items, quantity (1–20 per line), number of lines (at most 30) and text lengths.
+- **Rate limit.** One address can place at most 6 QR orders per table in 10 minutes. Counting per table means many phones sharing one mobile-network address can't block the whole café.
+- **Approval.** By default a person checks each QR order before it reaches the kitchen, which stops prank orders.
+- **Signed QR codes.** Each table's QR code includes a key (an HMAC of the table number with a server secret). Orders without the right key are refused, so someone who never sat at the table can't order for it, even though the cloud version is on the public internet. **Make new QR codes** replaces the secret and invalidates every printed code.
+- **Cloud transport.** On HTTPS the sign-in cookie is marked `Secure` and HSTS is sent. All responses send `nosniff`, `X-Frame-Options: DENY` and `Referrer-Policy: same-origin`. Behind Render's proxy, client addresses come from `X-Forwarded-For`.
+- **Secrets.** `DATABASE_URL` and `STAFF_PIN` are set in Render's environment, never in the repo.
+
 
 ---
 
 ## 7. Setup
 
+### Cloud (Render + Neon, free tiers)
+1. **Neon:** create a project in the region nearest the café, then copy the connection string from **Connect**.
+2. **Render:** **New → Blueprint**, then pick this GitHub repo. Enter `DATABASE_URL` (the Neon string) and `STAFF_PIN` (4–8 digits), then **Apply**.
+3. Open the `https://….onrender.com` address, sign in with the PIN and change it in Settings.
+4. Set the menu, café name and number of tables, then print the table QR codes.
+5. Every push to `main` redeploys automatically.
+
+Free-tier limits: Render's free plan sleeps after about 15 idle minutes, and the next visitor waits about a minute. It has 750 hours and 5 GB of bandwidth a month, and Render does not recommend it for production. Neon's free plan has 1 GB of storage. Set `plan: starter` in `render.yaml` to keep the app awake (this costs money).
+
 ### Run at the café
 1. Install [Node.js](https://nodejs.org) (LTS) on a computer that stays on during opening hours.
 2. In the project folder, run:
    ```bash
+   npm install
    node server.js
    ```
 3. On each device on the same Wi-Fi, open the **"On other devices"** address it prints (for example `http://192.168.1.20:8080`).
@@ -251,7 +293,7 @@ Custom port: `PORT=9000 node server.js` (PowerShell: `$env:PORT=9000; node serve
 | Counter tablet | **Order** |
 | Bar or kitchen screen | **Kitchen** (station filter and sound on) |
 | Owner's phone | **Orders** and **Menu** |
-| Customers' phones | Scan the table QR code (they must be on the café Wi-Fi) |
+| Customers' phones | Scan the table QR code (cloud: from anywhere; café server: on the café Wi-Fi) |
 
 ### Development
 Open `index.html` through any static server (for example `python -m http.server`) to run in standalone mode, or run `node server.js` for server mode. There is no build step.
@@ -259,6 +301,8 @@ Open `index.html` through any static server (for example `python -m http.server`
 ### Suggested `.gitignore`
 ```
 data/
+node_modules/
+.claude/
 ```
 
 ---
@@ -284,9 +328,10 @@ All colours are CSS variables at the top of `styles.css`, so the palette can be 
 
 ## 8. Known limitations
 
-- On the café network the app is served over plain HTTP, so tablets get a home-screen shortcut rather than a full install with offline start-up. A page that is already open keeps working through short drops.
+- **Café server:** the app is served over plain HTTP, so tablets get a home-screen shortcut rather than a full install with offline start-up, and customers must be on the café Wi-Fi. A page that is already open keeps working through short drops.
+- **Cloud:** nothing works while the café's internet is down; a page already open queues staff changes until it reconnects. On Render's free plan the first visit after about 15 idle minutes takes roughly a minute.
+- **Cloud:** the server runs as a single instance, because live updates are held in that one server's memory. That suits one café but not a chain.
 - Staff share one PIN; there are no separate staff accounts or roles yet.
-- Customers must be on the café Wi-Fi to use the QR codes. A guest Wi-Fi network that is isolated from the server will block them.
 - The QR sheet loads its QR library from cdnjs, so the device used to print it needs internet access once.
 - If two devices edit the menu at the same moment, the last save wins.
 - Reporting covers only today; older orders are available through the backup export.
@@ -300,5 +345,5 @@ All colours are CSS variables at the top of `styles.css`, so the palette can be 
 2. **Staff roles**: separate owner and staff PINs, with Menu and Settings for the owner only.
 3. **Merge a table's QR orders**: show all of a table's orders and its running bill together.
 4. **Ticket printing**: ESC/POS printers at the bar and kitchen.
-5. **Cloud option**: hosted HTTPS for full install and a remote owner dashboard.
+5. **Owner reports**: weekly and monthly sales and best-sellers, using the order history stored in the cloud.
 6. **Payments and receipts.**

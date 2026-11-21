@@ -6,6 +6,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const T = (new URLSearchParams(location.search).get('t') || '').trim().toLowerCase();
 const TAKE = T === 'take';
+const K = (new URLSearchParams(location.search).get('k') || '').trim(); // table key from the QR code
 const KEY = 'cafeflow.my-orders';
 const C = { menu: null, cat: 'all', cart: [], view: 'menu', orderId: null, order: null, name: '', note: '', busy: false, offline: false };
 const D = $('#dlg');
@@ -36,7 +37,7 @@ function toast(msg) {
 }
 
 async function loadMenu() {
-  const r = await fetch('api/public/menu', { cache: 'no-store' });
+  const r = await fetch(`api/public/menu?t=${encodeURIComponent(T)}&k=${encodeURIComponent(K)}`, { cache: 'no-store' });
   if (!r.ok) throw new Error('menu');
   C.menu = await r.json(); C.offline = false;
   document.title = `${C.menu.cafeName} · Order`;
@@ -112,6 +113,7 @@ function render() {
   const w = $('#c-where'); w.hidden = !validTable(); w.textContent = TAKE ? 'Takeaway' : `Table ${T}`;
   if (!validTable()) { app.innerHTML = msg('Scan the QR code on your table', 'This link is missing a valid table number.'); return; }
   if (C.view === 'status') { app.innerHTML = vStatus(); return; }
+  if (!C.menu.tableOk) { app.innerHTML = msg('This QR code has expired', 'Please ask our staff for a new one, or order at the counter.'); return; }
   if (!C.menu.qrEnabled) { app.innerHTML = msg('Ordering by QR is paused', 'Please order at the counter. Sorry for the trouble!'); return; }
   if (C.view === 'cart' && !C.cart.length) C.view = 'menu';
   app.innerHTML = C.view === 'cart' ? vCart() : vMenu();
@@ -156,7 +158,7 @@ async function place() {
   try {
     const r = await fetch('api/public/order', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ table: T, customer: C.name, note: C.note, lines: C.cart.map(l => ({ itemId: l.itemId, qty: l.qty, options: l.mods.map(m => m.id), note: l.note })) }),
+      body: JSON.stringify({ table: T, key: K, customer: C.name, note: C.note, lines: C.cart.map(l => ({ itemId: l.itemId, qty: l.qty, options: l.mods.map(m => m.id), note: l.note })) }),
     });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) {

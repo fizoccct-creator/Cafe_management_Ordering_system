@@ -1,0 +1,17 @@
+# Render Blueprint for the CafeFlow cloud version.
+# Render dashboard → New → Blueprint → pick this repo. It asks for the values marked sync: false.
+services:
+  - type: web
+    name: cafeflow
+    runtime: node
+    plan: free            # sleeps after 15 min without visitors; switch to "starter" to keep it awake
+    region: singapore     # pick the region closest to your café (oregon, ohio, virginia, frankfurt, singapore)
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL   # Neon connection string (Neon dashboard → Connect), keep it secret
+        sync: false
+      - key: STAFF_PIN      # first staff PIN, 4–8 digits; change it later in Settings → Staff PIN
+        sync: false
