@@ -9,6 +9,7 @@
 | Components | 28 components and component sets, all bound to variables (list below) |
 | Staff App | Order, Kitchen, Orders/approvals, Menu, Settings, Sign-in, Table QR codes (desktop 1280), Order + Kitchen (phone 375), Order in Dark mode |
 | Customer App | Menu, Item options, Your order, Order sent, Order ready, Expired QR code (phone 375), plus Dark mode examples |
+| [Electric Theme](https://www.figma.com/design/VPIk0WRR7gf5DUIIb6lSdN?node-id=24-791) | Every staff and customer screen in the Electric look (from the client mood board), plus Electric Dark examples |
 
 ## How Figma maps to the code
 
@@ -16,8 +17,9 @@
 
 | Figma collection | Modes | CSS |
 |---|---|---|
-| Color (`color/bg/page`, `color/accent/default`, `color/status/ok`…) | Light, Dark | `--bg`, `--accent`, `--ok`… in `styles.css` (Dark = the `prefers-color-scheme: dark` block) |
-| Layout (`space/*`, `radius/*`) | Value | `--space-*`, `--radius-*`, `--radius` |
+| Color (`color/bg/page`, `color/accent/default`, `color/status/ok`…) | Light, Dark, Electric Light, Electric Dark | `--bg`, `--accent`, `--ok`… Light/Dark in `styles.css` (Dark = the `prefers-color-scheme: dark` block); Electric in `themes/moodboard.css` |
+| Color roles (`color/header/*`, `color/nav/*`, `color/bar/*`, `color/add/*`, `color/where/*`, `color/chip/*`, `color/banner/*`, `color/card/border`) | same four | `--header-bg`, `--nav-on-bg`, `--bar-bg`… In Dekad they point at the general colours; Electric gives them their own |
+| Layout (`space/*`, `radius/*`, `radius/control`, `show/brand-stripe`) | Dekad, Electric | `--space-*`, `--radius-*`, `--radius`, `--radius-control` (buttons, segmented control, banner) |
 | Primitives (raw hex) | Value | Hidden in Figma pickers; the semantic colours point to them |
 | Text styles (`Heading/H2`, `Body/Default`…) | — | Montserrat for headings, Poppins for text (`--font-head`, `--font-body`) |
 | Effect styles (`Shadow/Card`, `Shadow/Floating`, `Shadow/Dialog`) | — | `--shadow`, `.cartbar`, `dialog` shadows |
@@ -36,6 +38,19 @@
 | Menu item card · Order line · Kitchen ticket · Stat tile | `.item` · `.line` · `.ticket.warn` / `.ticket.late` · `.stat` |
 | Customer header · Customer menu row · Cart bar · Step / Progress steps · QR card | `.c-top` / `.c-where` · `.c-item` · `.c-bar` / `.cartbar` · `.c-steps` · `.qrcard` |
 | Logo · App icon | `icons/logo-*.png` · `icons/icon-*.png` |
+
+## Themes (Dekad and Electric)
+
+The app has two looks, chosen in **Settings → Look** and shared by every device and the guest page.
+In Figma they are variable modes, not separate components, so a component change shows up in both.
+
+| Look | Figma modes | Code |
+|---|---|---|
+| Dekad | Color **Light** / **Dark**, Layout **Dekad** | `styles.css` |
+| Electric | Color **Electric Light** / **Electric Dark**, Layout **Electric** | `themes/moodboard.css`, active when `<html data-theme="electric">` |
+
+To see any frame in the other look, select it and change its **Color** and **Layout** variable modes.
+A third look would be one more pair of modes here and one more file in `themes/`.
 
 ## Keeping Figma and the code in step
 
@@ -58,7 +73,7 @@ Figma and the code don't sync on their own. Live, automatic sync would need Figm
 ```bash
 node tools/tokens.js
 ```
-This prints `styles.css matches the Figma tokens.` when the two agree. Otherwise it lists each difference and exits with code 1, so it can also run in CI.
+This checks both looks (Dekad in `styles.css`, Electric in `themes/moodboard.css`, light and dark) and prints `The CSS matches the Figma tokens` when they agree. Otherwise it lists each difference and exits with code 1, so it can also run in CI.
 
 ## Conventions in the file
 - Screens are built only from component instances; colours, spacing and radius are bound to variables.

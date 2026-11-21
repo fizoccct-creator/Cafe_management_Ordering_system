@@ -21,7 +21,7 @@
     const it = (name, cat, price, station, groups) => ({ id: uid(), name, catId: cat.id, price, station, available: true, groups: groups.map(x => x.id) });
     return {
       v: 1,
-      settings: { cafeName: 'My Café', currency: '$', tables: 12, warnMins: 8, lateMins: 15, qrEnabled: true, qrApproval: true, numDay: '', nextNum: 1 },
+      settings: { cafeName: 'My Café', currency: '$', tables: 12, warnMins: 8, lateMins: 15, qrEnabled: true, qrApproval: true, theme: 'dekad', numDay: '', nextNum: 1 },
       categories: cats,
       groups: [size, temp, milk, sweet, extra, serve],
       items: [
@@ -42,7 +42,8 @@
     };
   }
 
-  const EDITABLE = ['cafeName', 'currency', 'tables', 'warnMins', 'lateMins', 'qrEnabled', 'qrApproval'];
+  const EDITABLE = ['cafeName', 'currency', 'tables', 'warnMins', 'lateMins', 'qrEnabled', 'qrApproval', 'theme'];
+  const THEMES = ['dekad', 'electric']; // look of every screen; see themes/
 
   // Mutates S. For addOrder it also writes the assigned number back onto op.order.num.
   function applyOp(S, op) {
@@ -64,11 +65,13 @@
       case 'line': { const o = find(op.id); const l = o && o.lines[op.i]; if (l) l.done = !!op.done; return; }
       case 'avail': { const it = S.items.find(i => i.id === op.id); if (it) it.available = !!op.available; return; }
       case 'menu': for (const k of ['categories', 'groups', 'items']) if (Array.isArray(op[k])) S[k] = copy(op[k]); return;
-      case 'settings': for (const k of EDITABLE) if (op.settings && k in op.settings) S.settings[k] = op.settings[k]; return;
+      case 'settings':
+        for (const k of EDITABLE) if (op.settings && k in op.settings && (k !== 'theme' || THEMES.includes(op.settings[k]))) S.settings[k] = op.settings[k];
+        return;
       case 'replace': { const n = copy(op.state); Object.keys(S).forEach(k => delete S[k]); Object.assign(S, n); return; }
       default: throw new Error('Unknown change type: ' + op.t);
     }
   }
 
-  return { uid, seed, applyOp };
+  return { uid, seed, applyOp, THEMES };
 });

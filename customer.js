@@ -40,6 +40,10 @@ async function loadMenu() {
   const r = await fetch(`api/public/menu?t=${encodeURIComponent(T)}&k=${encodeURIComponent(K)}`, { cache: 'no-store' });
   if (!r.ok) throw new Error('menu');
   C.menu = await r.json(); C.offline = false;
+  const th = C.menu.theme;
+  if (th && document.documentElement.dataset.theme !== th) document.documentElement.dataset.theme = th;
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = th === 'electric' ? '#24252C' : '#246EB9';
+  try { localStorage.setItem((window.CAFE_NS || 'cafeflow') + '.theme', th || 'dekad'); } catch { /* private mode */ }
   document.title = `${C.menu.cafeName} · Order`;
 }
 

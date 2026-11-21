@@ -16,6 +16,16 @@ const clampInt = (v, lo, hi, d) => { const n = parseInt(v, 10); return Number.is
 const ACTIVE = ['new', 'prep', 'ready'];
 const FLOW = ['new', 'prep', 'ready', 'done'];
 const LABEL = { pending: 'Needs approval', new: 'New', prep: 'Preparing', ready: 'Ready', done: 'Completed', cancelled: 'Cancelled' };
+const THEME_INFO = { // Settings → Look; the CSS is in styles.css (dekad) and themes/moodboard.css (electric)
+  dekad: { name: 'Dekad', note: 'Brand blue, teal and green', colors: ['#246EB9', '#16BAC5', '#93FF96', '#1E1E1E'], bar: '#246EB9' },
+  electric: { name: 'Electric', note: 'Electric blue, lime, charcoal, round shapes', colors: ['#1F5EFF', '#C5FF6A', '#24252C', '#E4E4EB'], bar: '#24252C' },
+};
+function applyTheme(t) {
+  const id = THEME_INFO[t] ? t : (document.documentElement.dataset.theme || 'dekad');
+  if (document.documentElement.dataset.theme !== id) document.documentElement.dataset.theme = id;
+  const m = document.querySelector('meta[name="theme-color"]'); if (m && THEME_INFO[id]) m.content = THEME_INFO[id].bar;
+  try { localStorage.setItem(NS + '.theme', id); } catch { /* private mode */ }
+}
 const QR_LIB = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
 
 /* ---------- Sync state ---------- */
@@ -356,6 +366,14 @@ function vSettings() {
       <div class="row"><label class="lbl grow">Ticket turns amber after (min)<input class="input" name="warnMins" type="number" min="1" max="120" value="${s.warnMins}"></label>
         <label class="lbl grow">Ticket turns red after (min)<input class="input" name="lateMins" type="number" min="2" max="240" value="${s.lateMins}"></label></div>
       <button class="btn primary">Save settings</button></form></section>
+    <section class="card"><h2>Look</h2>
+      <p class="muted">Colours and shapes for every staff screen and the guest ordering page${server ? ', on every device' : ''}.</p>
+      <div class="themes" role="radiogroup" aria-label="Look">${Object.entries(THEME_INFO).map(([id, t]) => {
+        const on = (s.theme || 'dekad') === id;
+        return `<button type="button" class="theme-opt ${on ? 'on' : ''}" role="radio" aria-checked="${on}" data-act="theme" data-id="${id}">
+          <span class="theme-sw" aria-hidden="true">${t.colors.map(c => `<i style="background:${c}"></i>`).join('')}</span>
+          <b>${t.name}</b><span class="muted sm">${t.note}</span></button>`;
+      }).join('')}</div></section>
     ${devices}
     ${server ? `<section class="card"><h2>QR ordering</h2><form id="qrForm" class="stack">
       <label class="opt inline"><input type="checkbox" name="qrEnabled" ${s.qrEnabled !== false ? 'checked' : ''}><span>Customers can order by scanning a table QR code</span></label>
@@ -536,6 +554,7 @@ const ACTIONS = {
   accept: d => { const o = findOrder(d.o); if (o && o.status === 'pending') { commit({ t: 'status', id: o.id, status: 'new' }); toast(`Order #${o.num} sent to the kitchen`); } },
   reject: d => { const o = findOrder(d.o); if (o && confirm(`Reject QR order #${o.num} (${o.type === 'dine' ? 'table ' + o.table : 'takeaway'})? The customer will see it was cancelled.`)) commit({ t: 'status', id: o.id, status: 'cancelled' }); },
   print: () => window.print(),
+  theme: d => { if ((S.settings.theme || 'dekad') !== d.id) { commit({ t: 'settings', settings: { theme: d.id } }); toast(`Look changed to ${THEME_INFO[d.id].name}`); } },
   qrRotate: async () => {
     if (!confirm('Make new QR codes? Every QR code already printed will stop working, so you must print and replace them all.')) return;
     try {
@@ -676,6 +695,7 @@ function render() {
   const fid = a && a.id && $('#main').contains(a) ? a.id : null;
   const sel = fid && typeof a.selectionStart === 'number' ? [a.selectionStart, a.selectionEnd] : null;
   $('#brand-name').textContent = S.settings.cafeName;
+  applyTheme(S.settings.theme);
   document.querySelectorAll('.nav a').forEach(el => el.classList.toggle('on', el.dataset.view === UI.view));
   const live = S.orders.filter(o => o.status === 'new' || o.status === 'prep').length;
   const b = $('#kbadge'); b.textContent = live; b.hidden = !live;

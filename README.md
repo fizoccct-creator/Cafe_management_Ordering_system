@@ -93,6 +93,8 @@ Tip: give the server computer a fixed IP in your router so the address never cha
   Settings → QR ordering → **Make new QR codes** (all printed codes stop working; reprint them).
 - Every change appears on all staff devices within a second. The header shows **Live · N devices**,
   or **Offline · N waiting**: offline changes are kept and sent when the connection returns.
+- **Settings → Look** switches between the **Dekad** and **Electric** designs. It changes every staff
+  device and the guest ordering page at once.
 - **Settings → Export backup** downloads the menu and full order history. Do it regularly.
 
 ## Client demo
@@ -113,8 +115,8 @@ charcoal, round cards, tilted tags). From it, clients can try the real software:
 - Because data stays in one browser, a phone and a laptop don't share the demo. To show two
   devices together, use the server version.
 - **Template, not a fork:** the demo runs the same `app.js`, `customer.js` and `styles.css`.
-  The look comes from `themes/moodboard.css` (tokens and shapes only) and the no-server behaviour
-  from `demo.js`. To make a demo for another café, copy the theme file and change its colours.
+  The look is the Electric theme (`themes/moodboard.css`, also available to real cafés in
+  Settings → Look) and the no-server behaviour comes from `demo.js`.
 
 ## Configuration (environment variables)
 
@@ -142,6 +144,7 @@ device only, with data stored in that browser. QR ordering needs the server.
 | `app.js`, `index.html`, `styles.css` | The staff app |
 | `order.html`, `customer.js` | Customer QR ordering page |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Install/offline support |
-| `demo.html`, `demo-app.html`, `demo-order.html`, `demo.js`, `themes/moodboard.css` | Client demo (see above) |
+| `themes/moodboard.css` | Electric look (Settings → Look) |
+| `demo.html`, `demo-app.html`, `demo-order.html`, `demo.js` | Client demo (see above) |
 | `render.yaml` | Render deploy blueprint |
 | `package.json` | Node project; one dependency (`pg`) |

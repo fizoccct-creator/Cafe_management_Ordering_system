@@ -16,6 +16,7 @@
   function fresh() {
     const s = seed();
     s.settings.cafeName = 'Dekad Demo Café';
+    s.settings.theme = 'electric';
     const item = n => s.items.find(i => i.name === n);
     const opt = (g, o) => { const grp = s.groups.find(x => x.name === g), op = grp.options.find(x => x.name === o); return { group: grp.name, name: op.name, price: op.price }; };
     const line = (n, qty, mods = [], note = '') => { const it = item(n); return { itemId: it.id, name: it.name, price: it.price, station: it.station, qty, mods, note, done: false }; };
@@ -55,7 +56,7 @@
   function publicMenu() {
     const s = state(), st = s.settings;
     return {
-      cafeName: st.cafeName, currency: st.currency, tables: st.tables, qrEnabled: st.qrEnabled !== false, tableOk: true,
+      cafeName: st.cafeName, currency: st.currency, theme: st.theme || 'electric', tables: st.tables, qrEnabled: st.qrEnabled !== false, tableOk: true,
       categories: s.categories, groups: s.groups,
       items: s.items.map(({ id, name, catId, price, available, groups }) => ({ id, name, catId, price, available, groups })),
     };

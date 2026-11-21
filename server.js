@@ -209,7 +209,7 @@ function publicMenu(url) {
   const s = db.state.settings;
   const t = url.searchParams.get('t') || '';
   return {
-    cafeName: s.cafeName, currency: s.currency, tables: s.tables, qrEnabled: s.qrEnabled !== false,
+    cafeName: s.cafeName, currency: s.currency, tables: s.tables, qrEnabled: s.qrEnabled !== false, theme: s.theme || 'dekad',
     tableOk: qrKeyOk(t, url.searchParams.get('k')),
     categories: db.state.categories, groups: db.state.groups,
     items: db.state.items.map(({ id, name, catId, price, available, groups }) => ({ id, name, catId, price, available, groups })),
@@ -286,7 +286,7 @@ async function route(req, res) {
   const url = new URL(req.url, 'http://local');
   const p = url.pathname, m = req.method;
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN'); // demo.html shows the app in frames
   res.setHeader('Referrer-Policy', 'same-origin');
   if (isHttps(req)) res.setHeader('Strict-Transport-Security', 'max-age=15552000');
 
