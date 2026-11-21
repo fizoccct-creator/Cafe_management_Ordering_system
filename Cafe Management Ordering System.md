@@ -233,6 +233,25 @@ data/
 
 ---
 
+## 7a. Branding (Dekad Teknologies)
+
+The app follows the Dekad brand guidelines.
+
+| Element | Value | Where it's used |
+|---|---|---|
+| Primary blue | `#246EB9` | Buttons, selected states, the selected table, prices, app icon background |
+| Green | `#93FF96` | "Ready" and success states in dark mode, the icon's roof mark, the brand strip |
+| Teal | `#16BAC5` | "New" tickets and info states, the brand strip |
+| Black | `#1E1E1E` | Text colour, dark-mode background |
+| Headings | Montserrat (Black / ExtraBold / Bold) | Titles, order numbers, stats |
+| Body | Poppins (Regular / SemiBold) | All other text |
+| Logo | `icons/logo-blue.png`, `icons/logo-white.png` | Settings → About (the white version is shown in dark mode) |
+| Pattern | Circles in the brand colours | Brand strip under the header, the dots in About |
+
+All colours are CSS variables at the top of `styles.css`, so the palette can be changed in one place. Fonts load from Google Fonts; without internet access the app falls back to the system font.
+
+---
+
 ## 8. Known limitations
 
 - On the café network the app is served over plain HTTP, so tablets get a home-screen shortcut rather than a full install with offline start-up. A page that is already open keeps working through short drops.

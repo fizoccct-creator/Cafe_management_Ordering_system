@@ -1,7 +1,7 @@
 // Network-first with cache fallback: always fresh when online, still opens offline.
 // Live sync traffic (/api/) is never cached.
-const CACHE = 'cafeflow-v2';
-const ASSETS = ['./', './index.html', './styles.css', './shared.js', './app.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
+const CACHE = 'cafeflow-v3';
+const ASSETS = ['./', './index.html', './styles.css', './shared.js', './app.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/logo-blue.png', './icons/logo-white.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));

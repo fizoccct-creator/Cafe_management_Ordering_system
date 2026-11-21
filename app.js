@@ -296,6 +296,10 @@ function vSettings() {
       <p class="muted">${server ? 'Data is stored on the café server (data/cafeflow.json). Export downloads the menu and full order history.' : 'Menu and orders are stored on this device only. Export a backup regularly.'}</p>
       <div class="row"><button class="btn" data-act="export">Export backup</button>
         <label class="btn">Import backup<input type="file" id="importFile" accept="application/json,.json" hidden></label></div></section>
+    <section class="card about"><h2>About</h2>
+      <picture><source srcset="icons/logo-white.png" media="(prefers-color-scheme: dark)"><img src="icons/logo-blue.png" alt="dekad. teknologies" width="200" height="62"></picture>
+      <p class="muted" style="margin:0">CafeFlow — café ordering system by Dekad Teknologies.</p>
+      <div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></section>
     <section class="card"><h2>Reset</h2><p class="muted">Replace everything with the demo menu and delete all orders${server ? ' — on every device' : ''}.</p>
       <button class="btn danger" data-act="reset">Reset to demo data</button></section>
   </div>`;

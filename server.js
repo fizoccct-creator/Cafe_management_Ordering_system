@@ -87,7 +87,7 @@ async function handleOp(req, res) {
 }
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
-const PUBLIC = new Set(['/index.html', '/app.js', '/shared.js', '/styles.css', '/sw.js', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png']);
+const PUBLIC = new Set(['/index.html', '/app.js', '/shared.js', '/styles.css', '/sw.js', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/logo-blue.png', '/icons/logo-white.png']);
 function serveStatic(p, res) {
   if (p === '/') p = '/index.html';
   if (!PUBLIC.has(p)) { res.writeHead(404); return res.end('Not found'); }

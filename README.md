@@ -1,6 +1,7 @@
 # CafeFlow — café ordering
 
 Menu management, order taking, and a live kitchen/bar ticket screen. No payments.
+Branded for **Dekad Teknologies** (colours, fonts and logo: see the design document, section 7a).
 
 ## Run it in the café (all devices in sync)
 
