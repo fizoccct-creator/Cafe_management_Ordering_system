@@ -108,9 +108,14 @@ charcoal, round cards, tilted tags). From it, clients can try the real software:
 | `demo-app.html` | The full staff app with the mood board theme |
 | `demo-order.html?t=5` | The guest QR ordering page for Table 5 |
 
-- **No server or sign-in needed.** The demo café (sample menu and a morning of orders) lives in the
-  visitor's browser, separate from real café data. A guest order placed in one tab shows up in the
-  staff app in another tab. **Reset demo** starts over.
+- **No server or sign-in needed.** The demo café lives in the visitor's browser, separate from real
+  café data. It opens with the menu ready and **no orders**, so a walkthrough starts at order #1:
+  staff take an order on the Order screen, a guest orders at Table 5, staff approve it, the kitchen
+  serves both. A guest order placed in one tab shows up in the staff app in another tab.
+- **Start over** empties it again; **Fill with sample orders** loads a busy morning (orders in
+  every stage) for showing reports and the kitchen board.
+- To host the demo on its own (e.g. Cloudflare Pages), run `node tools/build-demo.js <folder>` and
+  publish that folder. No build command is needed.
 - Works on any static host (e.g. GitHub Pages) and on the café server at `/demo.html`.
 - Because data stays in one browser, a phone and a laptop don't share the demo. To show two
   devices together, use the server version.

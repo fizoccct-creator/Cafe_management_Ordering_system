@@ -185,7 +185,7 @@
     <header class="bar">
       <img src="icons/logo-blue.png" alt="dekad. teknologies" width="110" height="34">
       <nav>
-        <a class="btn line sm" href="demo-app.html#orders">Staff app</a>
+        <a class="btn line sm" href="demo-app.html#pos">Staff app</a>
         <a class="btn ink sm" href="demo-order.html?t=5">Order as a guest</a>
       </nav>
     </header>
@@ -198,7 +198,7 @@
         <p>Guests order from their table with a QR code. Your team runs orders, the kitchen and the menu from any tablet. Everything updates live.</p>
         <div class="acts">
           <a class="btn lime" href="demo-order.html?t=5">Order as a guest →</a>
-          <a class="btn line" href="demo-app.html#orders">Open the staff app</a>
+          <a class="btn line" href="demo-app.html#pos">Open the staff app</a>
         </div>
       </section>
 
@@ -234,7 +234,7 @@
       <section class="tile t-ink chat s4">
         <div class="eyebrow">What your guest sees</div>
         <div class="bub g">2× Latte, oat milk. Table 5 🙂</div>
-        <div class="bub c">Order #12 accepted ✓</div>
+        <div class="bub c">Order #1 accepted ✓</div>
         <div class="bub c">Being prepared. Won't be long!</div>
         <div class="bub g">Can't wait ☕</div>
         <div class="bub c">Ready! On its way to your table.</div>
@@ -268,17 +268,22 @@
       <!-- Steps -->
       <section class="tile t-white steps-tile s6">
         <div class="side">
-          <span class="eyebrow">Try it yourself</span>
-          <h2>See the whole order in <em>three steps</em></h2>
-          <a class="btn ink sm" href="demo-order.html?t=5" style="align-self:flex-start">Start at Table 5</a>
+          <span class="eyebrow">Try it from the first order</span>
+          <h2>Two ways to order, <em>one kitchen</em></h2>
+          <p style="margin:0;font-size:13px;color:#5C5E69">The demo café opens with no orders, so the first one you place is #1.</p>
+          <div class="acts">
+            <a class="btn ink sm" href="demo-app.html#pos">Staff: take an order</a>
+            <a class="btn line sm" href="demo-order.html?t=5">Guest: Table 5</a>
+          </div>
         </div>
         <div class="steps">
-          <div class="eyebrow">About two minutes</div>
-          <h3>Guest to kitchen</h3>
+          <div class="eyebrow">About three minutes</div>
+          <h3>Counter and table to kitchen</h3>
           <ol>
-            <li><b>Order as a guest</b><span>Pick drinks and food at <a href="demo-order.html?t=5">Table 5</a>, then place the order.</span></li>
-            <li><b>Approve it</b><span>In the <a href="demo-app.html#orders">staff app</a>, accept it under Needs approval.</span></li>
-            <li><b>Make it and serve it</b><span>In <a href="demo-app.html#kitchen">Kitchen</a>, start and mark it ready. The guest's screen updates.</span></li>
+            <li><b>Staff take an order</b><span>In the <a href="demo-app.html#pos">staff app</a>, pick a table, tap items, then Send to kitchen.</span></li>
+            <li><b>A guest orders by QR</b><span>On the <a href="demo-order.html?t=5">Table 5 page</a>, pick drinks and food and place the order.</span></li>
+            <li><b>Staff approve the guest order</b><span>In <a href="demo-app.html#orders">Orders</a>, accept it under Needs approval.</span></li>
+            <li><b>Kitchen makes and serves</b><span>In <a href="demo-app.html#kitchen">Kitchen</a>: Start, Mark ready, Served. The guest's screen follows along.</span></li>
           </ol>
         </div>
       </section>
@@ -296,23 +301,23 @@
       <section class="tile t-ink try s12" id="try">
         <div class="try-head">
           <div><h2>Try it side by side</h2>
-            <p>Order on the phone, approve it on the staff screen. Both run here in your browser, with sample data you can reset any time.</p></div>
-          <button class="btn lime sm" type="button" data-reset>Reset demo</button>
+            <p>Take an order on the staff tablet, or order on the guest phone and approve it on the tablet. Both run here in your browser and start with no orders.</p></div>
+          <div class="acts"><button class="btn lime sm" type="button" data-reset="0">Start over</button><button class="btn line sm" type="button" data-reset="1">Fill with sample orders</button></div>
         </div>
         <div class="frames">
           <div><p class="frame-label">Guest phone · Table 5</p><div class="frame phone"><iframe title="Guest ordering, Table 5" src="demo-order.html?t=5" loading="lazy"></iframe></div></div>
-          <div><p class="frame-label">Staff tablet · Orders</p><div class="frame tablet"><iframe title="Staff app" src="demo-app.html#orders" loading="lazy"></iframe></div></div>
+          <div><p class="frame-label">Staff tablet</p><div class="frame tablet"><iframe title="Staff app" src="demo-app.html#pos" loading="lazy"></iframe></div></div>
         </div>
         <div class="acts narrow-only">
           <a class="btn lime" href="demo-order.html?t=5">Guest phone</a>
-          <a class="btn line" href="demo-app.html#orders">Staff app</a>
+          <a class="btn line" href="demo-app.html#pos">Staff app</a>
         </div>
       </section>
     </main>
 
     <footer>
       <img src="icons/logo-blue.png" alt="dekad. teknologies" width="84" height="26">
-      <span>CafeFlow demo · sample data stays in this browser · <button type="button" data-reset>Reset demo</button></span>
+      <span>CafeFlow demo · data stays in this browser · <button type="button" data-reset="0">Start over</button> · <button type="button" data-reset="1">Fill with sample orders</button></span>
     </footer>
   </div>
 
@@ -338,7 +343,7 @@
     addEventListener('storage', paint);
     setInterval(paint, 5000);
     document.querySelectorAll('[data-reset]').forEach(b => b.addEventListener('click', () => {
-      CafeDemo.reset(); paint();
+      CafeDemo.reset(b.dataset.reset === '1'); paint();
       document.querySelectorAll('iframe').forEach(f => { f.src = f.src; });
     }));
   </script>

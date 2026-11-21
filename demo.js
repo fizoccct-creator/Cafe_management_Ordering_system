@@ -12,11 +12,15 @@
   const read = () => { try { const s = JSON.parse(localStorage.getItem(KEY)); return s && s.v ? s : null; } catch { return null; } };
   const write = s => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* private mode */ } };
 
-  /* A café mid-morning: some orders served, some in the kitchen, one QR order waiting for approval. */
-  function fresh() {
+  /* The demo opens on a café that is ready but has no orders yet (order numbers start at #1),
+     so a walkthrough can begin from the first staff or guest order.
+     fresh(true) adds a café mid-morning instead: orders served, some in the kitchen, one waiting for approval. */
+  const VERSION = 2; // bump when the starting data changes, so returning visitors start over
+  function fresh(withSamples = false) {
     const s = seed();
     s.settings.cafeName = 'Dekad Demo Café';
     s.settings.theme = 'electric';
+    if (!withSamples) return s;
     const item = n => s.items.find(i => i.name === n);
     const opt = (g, o) => { const grp = s.groups.find(x => x.name === g), op = grp.options.find(x => x.name === o); return { group: grp.name, name: op.name, price: op.price }; };
     const line = (n, qty, mods = [], note = '') => { const it = item(n); return { itemId: it.id, name: it.name, price: it.price, station: it.station, qty, mods, note, done: false }; };
@@ -40,10 +44,16 @@
     }
     return s;
   }
-  function state() { let s = read(); if (!s) { s = fresh(); write(s); } return s; }
-  function reset() {
+  const version = () => { try { return Number(localStorage.getItem(NS + '.version')); } catch { return 0; } };
+  function reset(withSamples = false) {
     try { Object.keys(localStorage).filter(k => k.startsWith(NS + '.')).forEach(k => localStorage.removeItem(k)); } catch { /* ignore */ }
-    write(fresh());
+    write(fresh(withSamples));
+    try { localStorage.setItem(NS + '.version', String(VERSION)); } catch { /* ignore */ }
+  }
+  function state() {
+    let s = version() === VERSION ? read() : null;
+    if (!s) { reset(); s = read() || fresh(); }
+    return s;
   }
   window.CafeDemo = { state, reset, fresh };
   state();
@@ -114,8 +124,8 @@
     if (window.top !== window || document.body.dataset.demoBar === 'off') return;
     const bar = document.createElement('div');
     bar.className = 'demo-bar';
-    bar.innerHTML = '<span>Demo café · everything stays in this browser</span><a href="demo.html">Back to the tour</a><button type="button">Reset demo</button>';
-    bar.querySelector('button').onclick = () => { reset(); location.reload(); };
+    bar.innerHTML = '<span>Demo café · everything stays in this browser</span><a href="demo.html">Back to the tour</a><button type="button" data-r="0">Start over</button><button type="button" data-r="1">Fill with sample orders</button>';
+    bar.querySelectorAll('button').forEach(b => { b.onclick = () => { reset(b.dataset.r === '1'); location.reload(); }; });
     document.body.prepend(bar);
   });
 })();
