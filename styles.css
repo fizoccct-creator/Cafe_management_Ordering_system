@@ -5,10 +5,13 @@
   --font-head: "Montserrat", system-ui, sans-serif;
   --font-body: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --bg: #f3f6fa; --surface: #fff; --surface-2: #e9eff6; --text: #1E1E1E; --muted: #5d6773; --border: #d9e2ec;
-  --accent: #246EB9; --accent-ink: #fff; --accent-soft: #e2edf9; --accent-text: #1f62a6;
+  --accent: #246EB9; --accent-ink: #fff; --accent-soft: #e2edf9; --accent-text: #1F62A6;
   --ok: #1a7f4b; --ok-soft: #dcfbdf; --warn: #a3620a; --warn-soft: #fcefd6;
   --danger: #b3261e; --danger-soft: #fbe2df; --info: #0d7f88; --info-soft: #d9f4f6;
   --radius: 14px; --shadow: 0 1px 2px rgba(20,40,70,.06), 0 4px 14px rgba(20,40,70,.07);
+  /* Spacing + radius scale (Figma "Layout" collection; see design/tokens.json) */
+  --space-4: 4px; --space-6: 6px; --space-8: 8px; --space-10: 10px; --space-12: 12px; --space-14: 14px; --space-16: 16px; --space-18: 18px; --space-24: 24px;
+  --radius-sm: 8px; --radius-md: 10px; --radius-lg: 12px; --radius-xl: 16px; --radius-dialog: 18px; --radius-full: 999px;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {

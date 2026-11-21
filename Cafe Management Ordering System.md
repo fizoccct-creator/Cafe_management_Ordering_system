@@ -309,7 +309,7 @@ node_modules/
 
 ## 7a. Branding (Dekad Teknologies)
 
-The app follows the Dekad brand guidelines.
+The app follows the Dekad brand guidelines. The full design system (variables in Light and Dark modes, text and shadow styles, 28 components and every staff and customer screen) is in the [CafeFlow Design System Figma file](https://www.figma.com/design/VPIk0WRR7gf5DUIIb6lSdN). [design/FIGMA.md](design/FIGMA.md) explains how Figma maps to the code, and `node tools/tokens.js` checks that `styles.css` matches the Figma tokens.
 
 | Element | Value | Where it's used |
 |---|---|---|

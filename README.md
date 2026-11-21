@@ -4,6 +4,10 @@ Menu management, order taking, a live kitchen/bar ticket screen, and customer or
 table QR code. No payments (customers pay at the counter).
 Branded for **Dekad Teknologies** (colours, fonts and logo: see the design document, section 7a).
 
+**Design:** [CafeFlow Design System in Figma](https://www.figma.com/design/VPIk0WRR7gf5DUIIb6lSdN): tokens, components and every screen.
+[design/FIGMA.md](design/FIGMA.md) explains how Figma maps to the code and how to keep them in step
+(`node tools/tokens.js` checks that `styles.css` matches the Figma tokens).
+
 The same code runs two ways:
 
 | | **Cloud** (Render + Neon) | **Café computer** |
