@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>CafeFlow</title>
+  <meta name="description" content="Café ordering: menu, order taking, kitchen tickets.">
+  <meta name="theme-color" content="#8a5a3b">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><img src="icons/icon-192.png" alt="" width="28" height="28"><span id="brand-name">CafeFlow</span></div>
+    <span id="sync" class="sync" role="status" hidden></span>
+    <nav class="nav" aria-label="Main">
+      <a href="#pos" data-view="pos"><span class="ico">🧾</span>Order</a>
+      <a href="#kitchen" data-view="kitchen"><span class="ico">🔥</span>Kitchen<span class="badge" id="kbadge" hidden></span></a>
+      <a href="#orders" data-view="orders"><span class="ico">📋</span>Orders</a>
+      <a href="#menu" data-view="menu"><span class="ico">☕</span>Menu</a>
+      <a href="#settings" data-view="settings"><span class="ico">⚙️</span>Settings</a>
+    </nav>
+  </header>
+  <main id="main"></main>
+  <dialog id="dlg"></dialog>
+  <script src="shared.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
