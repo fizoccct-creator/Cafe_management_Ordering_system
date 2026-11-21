@@ -718,4 +718,4 @@ route();
 boot();
 setInterval(() => { if ((UI.view === 'kitchen' || UI.view === 'orders') && !D.open) render(); }, 15000); // keep ticket timers fresh
 
-if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator && window.isSecureContext && !window.CafeDemo) navigator.serviceWorker.register('sw.js').catch(() => {}); // demo: no offline install
