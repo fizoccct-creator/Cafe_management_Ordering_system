@@ -347,3 +347,18 @@ All colours are CSS variables at the top of `styles.css`, so the palette can be 
 4. **Ticket printing**: ESC/POS printers at the bar and kitchen.
 5. **Owner reports**: weekly and monthly sales and best-sellers, using the order history stored in the cloud.
 6. **Payments and receipts.**
+
+---
+
+## 10. Claude Code skills (repeatable tasks)
+
+Recurring jobs are saved as Claude Code skills in `.claude/skills/`, so they don't have to be worked out again each time. Claude Code loads them automatically in this project; you can also ask for one by name (for example "use the demo-video skill to re-render the videos").
+
+| Skill | Use it to | Reusable files |
+|---|---|---|
+| `demo-video` | Re-render or vary the 60-second explainer (16:9 and 9:16 Reels) after the app or design changes | `tools/video/capture-demo.mjs`, `design/video/landscape/index.html`, `design/video/reels/index.html` |
+| `demo-deploy` | Rebuild the client demo and publish it to the Dekad demo repo (Cloudflare Pages) | `tools/build-demo.js` |
+| `figma-sync` | Keep Figma and the CSS in step for both looks, light and dark | `design/tokens.json`, `tools/tokens.js`, `design/FIGMA.md` |
+| `launch-captions` | Write the launch post and Reels/TikTok captions in the approved wording | (templates inside the skill) |
+
+Each skill records where things are, the exact steps, and problems already solved (for example, rendering with the installed Chrome, and Instagram's safe area for Reels).

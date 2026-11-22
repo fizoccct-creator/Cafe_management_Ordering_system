@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1920, height=1080" />
+  <title>CafeFlow Demo: From #1 to Served</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,600;0,700;0,800;0,900;1,800;1,900&family=Poppins:wght@400;500;600;700&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    :root {
+      --blue: #1F5EFF; --lime: #C5FF6A; --ink: #24252C; --fog: #E4E4EB; --white: #fff; --muted: #5C5E69;
+      --head: "Montserrat", sans-serif; --body: "Poppins", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--fog); font-family: var(--body); color: var(--ink); }
+    #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+    #bg { position: absolute; inset: 0; background: var(--fog); }
+    #wipe { position: absolute; inset: 0; z-index: 50; background: var(--blue); }
+    .scene { position: absolute; inset: 0; z-index: 2; }
+    .full { position: absolute; inset: 0; }
+    .h { font-family: var(--head); font-weight: 800; letter-spacing: -0.025em; line-height: 1.04; margin: 0; }
+    .line { display: block; }
+    .lime { color: var(--lime); }
+    .blue { color: var(--blue); }
+    .white { color: var(--white); }
+    .em { font-style: italic; font-weight: 900; position: relative; display: inline-block; }
+    .sq { position: absolute; left: -3%; bottom: -0.2em; width: 106%; height: 0.32em; transform-origin: left center; display: block; }
+    .eyebrow { font-family: var(--head); font-weight: 800; font-size: 32px; letter-spacing: 0.1em; text-transform: uppercase; }
+    .cap { position: absolute; left: 120px; top: 70px; width: 1680px; font-size: 64px; }
+    .cap .line { width: 1680px; }
+
+    /* Devices */
+    .tablet { position: absolute; padding: 20px; background: #111216; border-radius: 46px; box-shadow: 0 40px 90px rgba(20, 24, 40, 0.28); }
+    .screen { position: relative; overflow: hidden; border-radius: 26px; background: var(--fog); }
+    .screen img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+    .phone { position: absolute; padding: 14px; background: #0B0C10; border-radius: 58px; box-shadow: 0 40px 90px rgba(0, 0, 0, 0.35); }
+    .phone .screen { border-radius: 44px; }
+    .tap { position: absolute; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%; border: 7px solid var(--lime); background: rgba(31, 94, 255, 0.18); opacity: 0; display: block; }
+    .chip { position: absolute; display: block; border-radius: 999px; font-family: var(--head); font-weight: 800; }
+
+    /* Scene 1 */
+    #s1-count { position: absolute; left: 120px; top: 170px; width: 640px; text-align: center; }
+    #s1-num { font-family: var(--head); font-weight: 800; font-size: 520px; line-height: 0.9; color: var(--blue); letter-spacing: -0.05em; display: block; }
+    #s1-lbl { font-size: 40px; color: var(--muted); display: block; margin-top: 6px; }
+    #s1-text { position: absolute; left: 860px; top: 300px; width: 960px; font-size: 92px; }
+
+    /* Scene 2 */
+    #s2-head { position: absolute; left: 120px; top: 110px; width: 900px; font-size: 84px; color: var(--white); }
+    .pill { position: absolute; display: block; padding: 10px 46px 16px; border: 5px solid var(--white); border-radius: 999px; font-family: var(--head); font-weight: 800; font-size: 74px; color: var(--white); letter-spacing: -0.01em; white-space: nowrap; }
+
+    /* Scene 3 */
+    .node { position: absolute; border-radius: 34px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; font-family: var(--head); font-weight: 800; }
+    .wire { position: absolute; height: 12px; border-radius: 6px; transform-origin: left center; display: block; }
+    #s3-head { position: absolute; left: 120px; top: 800px; width: 1680px; font-size: 92px; color: var(--white); }
+
+    /* Scene 10: kitchen board */
+    #board { position: absolute; left: 120px; top: 300px; width: 1680px; height: 700px; }
+    .kcol { position: absolute; top: 0; width: 540px; height: 700px; background: #F1F1F6; border-radius: 30px; }
+    .kcol h3 { margin: 26px 30px; font-family: var(--head); font-weight: 800; font-size: 34px; display: flex; align-items: center; gap: 14px; }
+    .kcol h3 i { width: 18px; height: 18px; border-radius: 50%; display: block; }
+    .ticket { position: absolute; width: 480px; height: 218px; display: block; }
+    .ticket img { position: absolute; inset: 0; width: 480px; height: 218px; display: block; border-radius: 20px; }
+    #s10-words { position: absolute; left: 120px; top: 120px; width: 1680px; font-size: 110px; display: flex; gap: 44px; }
+    #s10-words span { display: block; }
+    .served { position: absolute; left: 1290px; top: 230px; width: 380px; padding: 22px 0; text-align: center; background: var(--lime); color: var(--ink); border-radius: 999px; font-family: var(--head); font-weight: 900; font-size: 46px; display: block; }
+
+    /* Scene 11: bubbles */
+    .bub { position: absolute; max-width: 900px; padding: 26px 38px; border-radius: 40px; font-size: 40px; font-weight: 500; line-height: 1.3; display: block; }
+    .bub.c { background: var(--lime); color: var(--ink); border-top-right-radius: 10px; right: 140px; }
+    .bub.g { background: var(--blue); color: var(--white); border-bottom-left-radius: 10px; left: 820px; }
+
+    /* Scene 12 */
+    #s12-main { position: absolute; left: 0; top: 190px; width: 1920px; text-align: center; font-size: 120px; color: var(--white); }
+    #s12-sub { position: absolute; left: 0; top: 720px; width: 1920px; text-align: center; font-size: 52px; color: var(--white); font-weight: 600; }
+    #s12-cta { position: absolute; left: 760px; top: 830px; width: 400px; padding: 24px 0; text-align: center; background: var(--lime); color: var(--ink); border-radius: 999px; font-family: var(--head); font-weight: 800; font-size: 40px; display: block; }
+    #s12-logo { position: absolute; right: 90px; bottom: 70px; width: 240px; display: block; }
+  </style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-width="1920" data-height="1080" data-duration="60" data-fps="30">
+  <div id="bg"></div>
+
+  <!-- 1 · Hook (0-5) -->
+  <section id="sc1" class="clip scene" data-start="0" data-duration="5" data-track-index="1">
+    <div id="s1-count"><span id="s1-num">0</span><span id="s1-lbl">orders today</span></div>
+    <div id="s1-text" class="h">
+      <span class="line" id="s1-l1">An empty café.</span>
+      <span class="line" id="s1-l2">Zero orders.</span>
+      <span class="line blue" id="s1-l3" style="margin-top:44px">Let's take the very <span class="em">first<svg class="sq" id="s1-sq" viewBox="0 0 200 20" preserveAspectRatio="none"><path d="M3 13 C 40 4, 80 4, 120 9 S 180 15, 197 6" fill="none" stroke="#C5FF6A" stroke-width="7" stroke-linecap="round"/></svg></span> one.</span>
+    </div>
+  </section>
+
+  <!-- 2 · Intro (5-8) -->
+  <section id="sc2" class="clip scene" data-start="5" data-duration="3" data-track-index="1">
+    <div class="eyebrow lime" id="s2-eye" style="position:absolute;left:120px;top:110px">CafeFlow</div>
+    <div id="s2-head" class="h" style="top:160px">
+      <span class="line">Runs your counter, tables and kitchen.</span>
+    </div>
+    <span class="pill" id="p1" style="left:1060px;top:150px">Menu</span>
+    <span class="pill" id="p2" style="left:1240px;top:350px">Orders</span>
+    <span class="pill" id="p3" style="left:1100px;top:560px;background:#fff;color:#1F5EFF">Kitchen</span>
+    <span class="pill" id="p4" style="left:1330px;top:770px">QR codes</span>
+  </section>
+
+  <!-- 3 · Two lanes (8-11) -->
+  <section id="sc3" class="clip scene" data-start="8" data-duration="3" data-track-index="1">
+    <div class="node" id="n-tab" style="left:120px;top:120px;width:380px;height:250px;background:#1F5EFF;color:#fff;font-size:46px">
+      <span style="display:block;width:150px;height:96px;border:7px solid #fff;border-radius:16px"></span>Counter
+    </div>
+    <div class="node" id="n-ph" style="left:200px;top:430px;width:220px;height:300px;background:#C5FF6A;color:#24252C;font-size:40px">
+      <span style="display:block;width:70px;height:118px;border:7px solid #24252C;border-radius:16px"></span>Table 5
+    </div>
+    <span class="wire" id="w1" style="left:500px;top:240px;width:880px;background:#1F5EFF"></span>
+    <span class="wire" id="w2" style="left:420px;top:575px;width:960px;background:#C5FF6A"></span>
+    <div class="node" id="n-k" style="left:1380px;top:200px;width:420px;height:460px;background:#fff;color:#24252C;font-size:52px">
+      <span style="display:flex;gap:16px"><i style="display:block;width:80px;height:180px;border-radius:16px;background:#E2E9FF"></i><i style="display:block;width:80px;height:180px;border-radius:16px;background:#FFF1D6"></i><i style="display:block;width:80px;height:180px;border-radius:16px;background:#E5FFC2"></i></span>Kitchen
+    </div>
+    <div id="s3-head" class="h">
+      <span class="line">Two ways to order. <span class="lime">One kitchen.</span></span>
+    </div>
+  </section>
+
+  <!-- 4+5 · Staff order on the tablet (11-21) -->
+  <section id="sc4" class="clip scene" data-start="11" data-duration="10" data-track-index="1">
+    <div class="cap h" id="s4-cap">
+      <span class="line" id="s4-c1">At the counter: pick a table, tap a Latte, send.</span>
+    </div>
+    <div class="cap h" id="s5-cap">
+      <span class="line" id="s5-c1">Order <span class="blue">#1</span> is in the kitchen.</span>
+    </div>
+    <div class="tablet" id="s4-tab" style="left:380px;top:250px">
+      <div class="screen" style="width:1120px;height:700px">
+        <img id="s4-i1" src="assets/ui/s01_pos_empty.png" alt="">
+        <img id="s4-i2" src="assets/ui/s02_latte_options.png" alt="" style="opacity:0">
+        <img id="s4-i3" src="assets/ui/s03_pos_cart.png" alt="" style="opacity:0">
+        <img id="s4-i4" src="assets/ui/s04_pos_sent.png" alt="" style="opacity:0">
+        <span class="tap" id="t-tbl" style="left:917px;top:216px"></span>
+        <span class="tap" id="t-latte" style="left:387px;top:200px"></span>
+        <span class="tap" id="t-add" style="left:617px;top:627px"></span>
+        <span class="tap" id="t-send" style="left:977px;top:532px"></span>
+      </div>
+    </div>
+    <div class="chip" id="s5-chip" style="left:1570px;top:180px;width:230px;padding:18px 0;text-align:center;background:#C5FF6A;color:#24252C;font-size:64px">#1</div>
+  </section>
+
+  <!-- 6 · QR scan (21-24) -->
+  <section id="sc6" class="clip scene" data-start="21" data-duration="3" data-track-index="1">
+    <div class="cap h" style="width:1000px"><span class="line" style="width:1000px">At Table 5, a guest scans the QR code.</span></div>
+    <img id="s6-qr" src="assets/ui/s05_qr_table5.png" alt="" style="position:absolute;left:300px;top:330px;width:440px;height:643px;display:block">
+    <span id="s6-scan" style="position:absolute;left:330px;top:450px;width:380px;height:10px;border-radius:5px;background:#1F5EFF;box-shadow:0 0 30px #1F5EFF;display:block;opacity:0"></span>
+    <div class="phone" id="s6-ph" style="left:1150px;top:150px">
+      <div class="screen" style="width:380px;height:822px;background:#24252C">
+        <span style="position:absolute;left:70px;top:250px;width:240px;height:240px;border:8px solid #C5FF6A;border-radius:30px;display:block"></span>
+        <span style="position:absolute;left:0;top:540px;width:380px;text-align:center;color:#fff;font-family:Montserrat,sans-serif;font-weight:800;font-size:30px;display:block">Scanning…</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · Guest menu (24-28) -->
+  <section id="sc7" class="clip scene" data-start="24" data-duration="4" data-track-index="1">
+    <div class="h white" id="s7-head" style="position:absolute;left:120px;top:380px;width:800px;font-size:104px">
+      <span class="line">Picks</span><span class="line">a <span class="lime">drink.</span></span>
+    </div>
+    <div class="phone" id="s7-ph" style="left:1060px;top:110px">
+      <div class="screen" style="width:380px;height:822px">
+        <img id="s7-i1" src="assets/ui/g01_menu.png" alt="">
+        <img id="s7-i2" src="assets/ui/g02_latte_sheet.png" alt="" style="opacity:0">
+        <img id="s7-i3" src="assets/ui/g03_menu_cart.png" alt="" style="opacity:0">
+        <span class="tap" id="t-glatte" style="left:190px;top:321px"></span>
+        <span class="tap" id="t-gadd" style="left:254px;top:766px"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 · Order #2 (28-31) -->
+  <section id="sc8" class="clip scene" data-start="28" data-duration="3" data-track-index="1">
+    <div style="position:absolute;left:120px;top:170px;width:760px;height:420px;overflow:hidden">
+      <span class="h" id="s8-n1" style="position:absolute;left:0;top:0;font-size:400px;color:rgba(255,255,255,.35);display:block">#1</span>
+      <span class="h" id="s8-n2" style="position:absolute;left:0;top:0;font-size:400px;color:#fff;display:block">#2</span>
+    </div>
+    <div class="h white" style="position:absolute;left:120px;top:620px;width:800px;font-size:92px"><span class="line">Order #2 sent.</span></div>
+    <span class="chip" id="s8-pill" style="left:140px;top:790px;padding:20px 50px;background:#C5FF6A;color:#24252C;font-size:54px;white-space:nowrap">No app needed</span>
+    <div class="phone" id="s8-ph" style="left:1180px;top:110px">
+      <div class="screen" style="width:380px;height:822px"><img src="assets/ui/g05_order_sent.png" alt=""></div>
+    </div>
+  </section>
+
+  <!-- 9 · Approve (31-37) -->
+  <section id="sc9" class="clip scene" data-start="31" data-duration="6" data-track-index="1">
+    <div class="cap h" id="s9-cap1"><span class="line">Staff stay <span class="blue">in control.</span></span></div>
+    <div class="cap h" id="s9-cap2"><span class="line">One tap to accept it.</span></div>
+    <div class="tablet" id="s9-tab" style="left:380px;top:250px">
+      <div class="screen" style="width:1120px;height:700px">
+        <div id="s9-zoom" style="position:absolute;inset:0;transform-origin:0px 209px">
+          <img id="s9-i1" src="assets/ui/s06_orders_approval.png" alt="">
+          <img id="s9-i2" src="assets/ui/s07_orders_after.png" alt="" style="opacity:0">
+          <span class="tap" id="t-acc" style="left:594px;top:251px"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · Kitchen (37-47) -->
+  <section id="sc10" class="clip scene" data-start="37" data-duration="10" data-track-index="1">
+    <div class="cap h" id="s10-cap"><span class="line">The kitchen sees every order, <span class="blue">in order.</span></span></div>
+    <div id="s10-words" class="h"><span id="kw1">Start.</span><span id="kw2">Ready.</span><span id="kw3">Served.</span></div>
+    <div id="board">
+      <div class="kcol" style="left:0"><h3><i style="background:#1A4FD6"></i>New</h3></div>
+      <div class="kcol" style="left:570px"><h3><i style="background:#A3620A"></i>Preparing</h3></div>
+      <div class="kcol" style="left:1140px"><h3><i style="background:#2B6600"></i>Ready</h3></div>
+      <div class="ticket" id="tk1" style="left:30px;top:110px">
+        <img id="tk1a" src="assets/ui/s09_ticket_n1.png" alt="">
+        <img id="tk1b" src="assets/ui/s10_ticket_prep_0.png" alt="" style="opacity:0">
+        <img id="tk1c" src="assets/ui/s11_ticket_ready_0.png" alt="" style="opacity:0">
+      </div>
+      <div class="ticket" id="tk2" style="left:30px;top:360px">
+        <img id="tk2a" src="assets/ui/s09_ticket_n2.png" alt="">
+        <img id="tk2b" src="assets/ui/s10_ticket_prep_1.png" alt="" style="opacity:0">
+        <img id="tk2c" src="assets/ui/s11_ticket_ready_1.png" alt="" style="opacity:0">
+      </div>
+      <span class="served" id="s10-served">Served ✓</span>
+    </div>
+  </section>
+
+  <!-- 11 · Guest follows (47-53) -->
+  <section id="sc11" class="clip scene" data-start="47" data-duration="6" data-track-index="1">
+    <div class="cap h white" style="left:820px;width:980px;top:90px;font-size:62px"><span class="line" style="width:980px">And the guest's phone follows every step.</span></div>
+    <div class="phone" id="s11-ph" style="left:220px;top:110px">
+      <div class="screen" style="width:380px;height:822px">
+        <img id="s11-i1" src="assets/ui/g06_accepted.png" alt="">
+        <img id="s11-i2" src="assets/ui/g07_ready.png" alt="" style="opacity:0">
+      </div>
+    </div>
+    <span class="bub c" id="b1" style="top:330px">Order #2 accepted ✓</span>
+    <span class="bub c" id="b2" style="top:480px">Being prepared. Won't be long!</span>
+    <span class="bub g" id="b3" style="top:630px">Can't wait!</span>
+    <span class="bub c" id="b4" style="top:780px">Ready! On its way to your table.</span>
+  </section>
+
+  <!-- 12 · End card (53-60) -->
+  <section id="sc12" class="clip scene" data-start="53" data-duration="7" data-track-index="1">
+    <div id="s12-main" class="h">
+      <span class="line" id="e1">Two ways to order.</span>
+      <span class="line" id="e2"><span class="em">One kitchen.<svg class="sq" id="s12-sq" viewBox="0 0 200 20" preserveAspectRatio="none"><path d="M3 13 C 40 4, 80 4, 120 9 S 180 15, 197 6" fill="none" stroke="#C5FF6A" stroke-width="7" stroke-linecap="round"/></svg></span></span>
+      <span class="line" id="e3">Staff in control.</span>
+    </div>
+    <div id="s12-sub"><span class="line">Try the demo. Order #1 is yours.</span></div>
+    <span id="s12-cta">Try the demo →</span>
+    <img id="s12-logo" src="assets/logo-white.png" alt="dekad. teknologies">
+  </section>
+
+  <div id="wipe"></div>
+</div>
+
+<script>
+  window.__timelines = window.__timelines || {};
+  const tl = gsap.timeline({ paused: true });
+  const FOG = "#E4E4EB", BLUE = "#1F5EFF", INK = "#24252C", LIME = "#C5FF6A";
+  const tap = (id, t) => { tl.fromTo(id, { scale: 0.3, opacity: 1 }, { scale: 1.5, opacity: 0, duration: 0.55, ease: "power2.out" }, t); };
+  const swap = (from, to, t) => { tl.to(to, { opacity: 1, duration: 0.3, ease: "none" }, t); tl.to(from, { opacity: 0, duration: 0.3, ease: "none" }, t); };
+  const wipe = (color, t) => {
+    tl.set("#wipe", { backgroundColor: color, x: -1920 }, t - 0.45);
+    tl.to("#wipe", { x: 0, duration: 0.45, ease: "power3.inOut" }, t - 0.45);
+    tl.set("#bg", { backgroundColor: color }, t);
+    tl.set("#wipe", { x: -1920 }, t + 0.02);
+  };
+
+  // Backgrounds
+  tl.fromTo("#wipe", { x: -1920 }, { x: -1920, duration: 0.01 }, 0);
+  tl.set("#bg", { backgroundColor: FOG }, 0);
+  wipe(BLUE, 5);
+  wipe(INK, 8);
+  tl.set("#bg", { backgroundColor: FOG }, 11);
+  wipe(LIME, 21);
+  tl.set("#bg", { backgroundColor: INK }, 24);
+  wipe(BLUE, 28);
+  tl.set("#bg", { backgroundColor: FOG }, 31);
+  tl.set("#bg", { backgroundColor: INK }, 47);
+  wipe(BLUE, 53);
+
+  // 1 · Hook
+  tl.from("#s1-count", { scale: 0.85, duration: 0.7, ease: "back.out(1.6)" }, 0);
+  tl.from("#s1-l1", { y: 40, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.5);
+  tl.from("#s1-l2", { y: 40, opacity: 0, duration: 0.5, ease: "power3.out" }, 1.1);
+  tl.from("#s1-l3", { y: 40, opacity: 0, duration: 0.6, ease: "power3.out" }, 2.1);
+  tl.from("#s1-sq", { scaleX: 0, duration: 0.6, ease: "power2.out" }, 2.8);
+  tl.to("#s1-num", { scale: 1.06, duration: 0.35, yoyo: true, repeat: 1, ease: "sine.inOut" }, 3.6);
+
+  // 2 · Intro
+  tl.from("#s2-eye", { y: 20, opacity: 0, duration: 0.4 }, 5.05);
+  tl.from("#s2-head", { y: 40, opacity: 0, duration: 0.5, ease: "power3.out" }, 5.15);
+  [["#p1", 4], ["#p2", -6], ["#p3", 5], ["#p4", -4]].forEach(([id, r], i) => {
+    tl.fromTo(id, { y: -900, rotation: r * 3 }, { y: 0, rotation: r, duration: 0.7, ease: "back.out(1.4)" }, 5.25 + i * 0.16);
+  });
+
+  // 3 · Two lanes
+  tl.from("#n-tab", { x: -80, opacity: 0, duration: 0.45, ease: "power3.out" }, 8.05);
+  tl.from("#n-ph", { x: -80, opacity: 0, duration: 0.45, ease: "power3.out" }, 8.2);
+  tl.from("#w1", { scaleX: 0, duration: 0.7, ease: "power2.inOut" }, 8.5);
+  tl.from("#w2", { scaleX: 0, duration: 0.7, ease: "power2.inOut" }, 8.65);
+  tl.from("#n-k", { scale: 0.7, opacity: 0, duration: 0.5, ease: "back.out(1.7)" }, 8.9);
+  tl.from("#s3-head", { y: 40, opacity: 0, duration: 0.45, ease: "power3.out" }, 8.4);
+
+  // 4+5 · Staff order
+  tl.from("#s4-tab", { y: 120, opacity: 0, scale: 0.94, duration: 0.7, ease: "power3.out" }, 11.0);
+  tl.from("#s4-c1", { y: 30, opacity: 0, duration: 0.5, ease: "power3.out" }, 11.2);
+  tap("#t-tbl", 12.5);
+  tap("#t-latte", 13.4);
+  swap("#s4-i1", "#s4-i2", 13.8);
+  tap("#t-add", 15.0);
+  swap("#s4-i2", "#s4-i3", 15.35);
+  tl.to("#s4-cap", { opacity: 0, y: -20, duration: 0.3 }, 16.7);
+  tap("#t-send", 17.4);
+  swap("#s4-i3", "#s4-i4", 17.75);
+  tl.from("#s5-cap", { opacity: 0, y: 30, duration: 0.5, ease: "power3.out" }, 17.9);
+  tl.from("#s5-chip", { scale: 0, rotation: -20, duration: 0.6, ease: "back.out(2)" }, 18.5);
+  tl.to("#s5-chip", { rotation: -6, duration: 0.3 }, 19.1);
+
+  // 6 · QR scan
+  tl.from("#s6-qr", { y: 60, opacity: 0, rotation: -4, duration: 0.5, ease: "power3.out" }, 21.05);
+  tl.from("#s6-ph", { x: 700, rotation: 8, duration: 0.7, ease: "power3.out" }, 21.4);
+  tl.to("#s6-ph", { x: -330, duration: 0.6, ease: "power2.inOut" }, 22.1);
+  tl.set("#s6-scan", { opacity: 1 }, 22.5);
+  tl.fromTo("#s6-scan", { y: 0 }, { y: 360, duration: 0.9, ease: "sine.inOut" }, 22.5);
+  tl.to("#s6-scan", { opacity: 0, duration: 0.2 }, 23.4);
+
+  // 7 · Guest menu
+  tl.from("#s7-ph", { y: 140, opacity: 0, duration: 0.6, ease: "power3.out" }, 24.0);
+  tl.from("#s7-head", { x: -60, opacity: 0, duration: 0.5, ease: "power3.out" }, 24.2);
+  tap("#t-glatte", 24.9);
+  swap("#s7-i1", "#s7-i2", 25.25);
+  tap("#t-gadd", 26.4);
+  swap("#s7-i2", "#s7-i3", 26.75);
+
+  // 8 · Order #2
+  tl.from("#s8-n2", { y: 420, duration: 0.6, ease: "power3.out" }, 28.25);
+  tl.to("#s8-n1", { y: -420, duration: 0.6, ease: "power3.out" }, 28.25);
+  tl.from("#s8-ph", { x: 300, opacity: 0, duration: 0.6, ease: "power3.out" }, 28.1);
+  tl.fromTo("#s8-pill", { scale: 2.2, opacity: 0, rotation: -12 }, { scale: 1, opacity: 1, rotation: -5, duration: 0.45, ease: "back.out(1.6)" }, 29.3);
+
+  // 9 · Approve
+  tl.from("#s9-tab", { y: 100, opacity: 0, duration: 0.6, ease: "power3.out" }, 31.0);
+  tl.from("#s9-cap1", { y: 30, opacity: 0, duration: 0.5, ease: "power3.out" }, 31.2);
+  tl.to("#s9-zoom", { scale: 1.35, duration: 0.9, ease: "power2.inOut" }, 32.3);
+  tl.to("#s9-cap1", { opacity: 0, y: -20, duration: 0.3 }, 33.3);
+  tl.from("#s9-cap2", { y: 30, opacity: 0, duration: 0.5, ease: "power3.out" }, 33.6);
+  tap("#t-acc", 34.3);
+  swap("#s9-i1", "#s9-i2", 34.7);
+  tl.to("#s9-zoom", { scale: 1, duration: 0.8, ease: "power2.inOut" }, 35.3);
+
+  // 10 · Kitchen
+  tl.from("#board", { y: 80, opacity: 0, duration: 0.6, ease: "power3.out" }, 37.0);
+  tl.from("#s10-cap", { y: 30, opacity: 0, duration: 0.5, ease: "power3.out" }, 37.2);
+  tl.from(["#tk1", "#tk2"], { x: -60, opacity: 0, duration: 0.5, stagger: 0.15, ease: "power3.out" }, 37.7);
+  tl.to("#s10-cap", { opacity: 0, y: -20, duration: 0.3 }, 39.4);
+  // Start.
+  tl.from("#kw1", { scale: 1.8, opacity: 0, duration: 0.4, ease: "back.out(1.8)" }, 39.8);
+  tl.to(["#tk1", "#tk2"], { x: 570, duration: 0.7, stagger: 0.12, ease: "power3.inOut" }, 40.2);
+  swap("#tk1a", "#tk1b", 40.5); swap("#tk2a", "#tk2b", 40.6);
+  // Ready.
+  tl.to("#kw1", { color: "#6E7080", duration: 0.2 }, 42.0);
+  tl.from("#kw2", { scale: 1.8, opacity: 0, duration: 0.4, ease: "back.out(1.8)" }, 42.0);
+  tl.to(["#tk1", "#tk2"], { x: 1140, duration: 0.7, stagger: 0.12, ease: "power3.inOut" }, 42.4);
+  swap("#tk1b", "#tk1c", 42.7); swap("#tk2b", "#tk2c", 42.8);
+  // Served.
+  tl.to("#kw2", { color: "#6E7080", duration: 0.2 }, 44.0);
+  tl.from("#kw3", { scale: 1.8, opacity: 0, duration: 0.4, ease: "back.out(1.8)" }, 44.0);
+  tl.to("#kw3", { color: BLUE, duration: 0.2 }, 44.4);
+  tl.to(["#tk1", "#tk2"], { y: -60, opacity: 0, duration: 0.5, stagger: 0.12, ease: "power2.in" }, 44.4);
+  tl.from("#s10-served", { scale: 0, rotation: -15, duration: 0.55, ease: "back.out(2)" }, 45.0);
+
+  // 11 · Guest follows
+  tl.from("#s11-ph", { x: -200, opacity: 0, duration: 0.6, ease: "power3.out" }, 47.0);
+  [["#b1", 47.9], ["#b2", 48.9], ["#b3", 49.8], ["#b4", 50.7]].forEach(([id, t]) => {
+    tl.from(id, { scale: 0.5, opacity: 0, y: 30, duration: 0.45, ease: "back.out(1.8)" }, t);
+  });
+  swap("#s11-i1", "#s11-i2", 50.7);
+
+  // 12 · End card
+  tl.from("#e1", { y: 50, opacity: 0, duration: 0.5, ease: "power3.out" }, 53.2);
+  tl.from("#e2", { y: 50, opacity: 0, duration: 0.5, ease: "power3.out" }, 53.7);
+  tl.from("#s12-sq", { scaleX: 0, duration: 0.6, ease: "power2.out" }, 54.2);
+  tl.from("#e3", { y: 50, opacity: 0, duration: 0.5, ease: "power3.out" }, 54.4);
+  tl.from("#s12-sub", { y: 30, opacity: 0, duration: 0.5, ease: "power3.out" }, 56.0);
+  tl.from("#s12-cta", { scale: 0.6, opacity: 0, duration: 0.5, ease: "back.out(1.8)" }, 56.6);
+  tl.from("#s12-logo", { opacity: 0, duration: 0.6 }, 57.2);
+
+  window.__timelines["main"] = tl;
+</script>
+</body>
+</html>
