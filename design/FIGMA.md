@@ -10,6 +10,7 @@
 | Staff App | Order, Kitchen, Orders/approvals, Menu, Settings, Sign-in, Table QR codes (desktop 1280), Order + Kitchen (phone 375), Order in Dark mode |
 | Customer App | Menu, Item options, Your order, Order sent, Order ready, Expired QR code (phone 375), plus Dark mode examples |
 | [Electric Theme](https://www.figma.com/design/VPIk0WRR7gf5DUIIb6lSdN?node-id=24-791) | Every staff and customer screen in the Electric look (from the client mood board), plus Electric Dark examples |
+| [Demo, unslopped](https://www.figma.com/design/VPIk0WRR7gf5DUIIb6lSdN?node-id=32-2) | Redesign of the demo with the unslop method (Figma only, not in code yet): components kit, staff Order / Kitchen / Orders, guest Menu / Order status, demo tour hero |
 
 ## How Figma maps to the code
 
@@ -79,3 +80,12 @@ This checks both looks (Dekad in `styles.css`, Electric in `themes/moodboard.css
 - Screens are built only from component instances; colours, spacing and radius are bound to variables.
 - To preview dark mode, select a frame and set its **Color** variable mode to **Dark** (see the "(Dark mode)" frames).
 - The QR card shows a sample pattern; the app draws the real, signed QR code for each table.
+
+## Demo, unslopped (redesign, not in code yet)
+
+Made with the unslop skill. Direction: *brisk, friendly, exact*; world = a café counter mid-morning (paper tickets, the kitchen rail, receipt paper).
+
+- **Colours:** its own variable collection **Counter** (`counter/*`, code syntax `--c-*`): warm receipt-paper neutrals, electric blue as the only accent, lime only for Ready/Served.
+- **Type:** Montserrat Medium/SemiBold for titles, Poppins Regular/Medium for text, **IBM Plex Mono** for order numbers, prices and times. No 800/900 weights, no uppercase labels, no italic.
+- **Components (on that page):** `Icon/*` (lucide, 18px, 1.5 stroke), `Button` (Primary/Secondary × Md/Sm), `Order stub` (signature: tear-off ticket stub, S/L), `Kitchen ticket` (New/Preparing/Ready, paper ticket on a rail with a torn edge), `Staff top bar` (Active = Order/Kitchen/Orders).
+- To ship it, the CSS needs the `--c-*` tokens, the icon set in place of emoji, and the ticket/stub styles; the existing Dekad and Electric pages are unchanged.
