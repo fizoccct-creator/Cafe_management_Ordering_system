@@ -150,6 +150,7 @@ device only, with data stored in that browser. QR ordering needs the server.
 | `order.html`, `customer.js` | Customer QR ordering page |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Install/offline support |
 | `themes/moodboard.css` | Electric look (Settings → Look) |
+| `icons.js` | Line icons (lucide) used instead of emoji |
 | `demo.html`, `demo-app.html`, `demo-order.html`, `demo.js` | Client demo (see above) |
 | `render.yaml` | Render deploy blueprint |
 | `package.json` | Node project; one dependency (`pg`) |

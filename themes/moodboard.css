@@ -1,72 +1,72 @@
-/* "Electric" theme (from the client mood board). Active when <html data-theme="electric">:
-   staff choose it in Settings → Look; the demo pages use it by default.
-   Load after styles.css. It sets tokens only where it can (same names as the Figma variables in
-   the "Electric Light" / "Electric Dark" / "Electric" modes), plus a few shape tweaks below.
-   Electric blue, lime, charcoal header, fog grey, very round cards and pill buttons. */
+/* "Electric" look, redesigned with unslop (Figma page "Demo, unslopped", Counter collection, Light mode).
+   Active when <html data-theme="electric">; staff choose it in Settings → Look, the demo uses it by default.
+   Direction: brisk, friendly, exact. World: a café counter mid-morning — receipt paper, order tickets,
+   the kitchen rail. Warm paper neutrals, electric blue as the only accent, lime only for Ready/Served,
+   order numbers as tear-off ticket stubs in mono. Load after styles.css; tokens first, then the few
+   shapes tokens can't express. Names match design/tokens.json (checked by tools/tokens.js). */
 :root[data-theme="electric"] {
-  --mb-blue: #1F5EFF; --mb-lime: #C5FF6A; --mb-ink: #24252C; --mb-fog: #E4E4EB;
-  --brand-blue: var(--mb-blue); --brand-green: var(--mb-lime); --brand-teal: var(--mb-blue); --brand-black: var(--mb-ink);
-  --bg: #E4E4EB; --surface: #fff; --surface-2: #EFEFF4; --text: #24252C; --muted: #5C5E69; --border: #D7D7E0;
-  --accent: #1F5EFF; --accent-ink: #fff; --accent-soft: #E2E9FF; --accent-text: #1A4FD6;
-  --ok: #2B6600; --ok-soft: #E5FFC2; --info: #1A4FD6; --info-soft: #E2E9FF;
-  --radius: 24px; --radius-md: 999px; --radius-lg: 18px; --radius-xl: 24px; --radius-dialog: 28px; --radius-control: 999px; --shadow: none;
-  --header-bg: #24252C; --header-text: #fff; --header-muted: #B8B9C2; --nav-on-bg: #C5FF6A; --nav-on-text: #24252C;
-  --bar-bg: #24252C; --bar-value: #C5FF6A; --add-bg: #C5FF6A; --add-ink: #24252C; --where-bg: #C5FF6A; --where-ink: #24252C;
-  --chip-on-bg: #1F5EFF; --chip-on-text: #fff; --banner-bg: #1F5EFF; --banner-text: #fff; --banner-border: #1F5EFF; --card-border: #fff;
+  --mb-blue: #1F5EFF; --mb-lime: #C5FF6A; --mb-ink: #1F1B16; --mb-fog: #F6F3EC;
+  --brand-blue: #1F5EFF; --brand-green: #C5FF6A; --brand-teal: #1F5EFF; --brand-black: #1F1B16;
+  --font-figures: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --bg: #F6F3EC; --surface: #FFFFFF; --surface-2: #EFEAE1; --text: #1F1B16; --muted: #5E554A; --border: #E5DFD4;
+  --accent: #1F5EFF; --accent-ink: #FFFFFF; --accent-soft: #E7EDFF; --accent-text: #1A4FD6;
+  --ok: #2B6600; --ok-soft: #E5FFC2; --warn: #A3620A; --warn-soft: #FBEFD9;
+  --danger: #C2362E; --danger-soft: #FBE3E0; --info: #1A4FD6; --info-soft: #E7EDFF;
+  --radius: 16px; --radius-md: 10px; --radius-lg: 12px; --radius-xl: 16px; --radius-dialog: 20px; --radius-control: 10px;
+  --shadow: 0 1px 2px rgba(31, 27, 22, .06);
+  --header-bg: #F6F3EC; --header-text: #1F1B16; --header-muted: #5E554A; --nav-on-bg: #EFEAE1; --nav-on-text: #1F1B16;
+  --bar-bg: #1F5EFF; --bar-value: #FFFFFF; --add-bg: #EFEAE1; --add-ink: #1F1B16; --where-bg: #EFEAE1; --where-ink: #1F1B16;
+  --chip-on-bg: #1F1B16; --chip-on-text: #F6F3EC; --banner-bg: #E7EDFF; --banner-text: #1F1B16; --banner-border: #E7EDFF; --card-border: #E5DFD4;
+  --ready-bg: #C5FF6A; --ready-ink: #1F1B16;
+  --paper: #FFFDF7; --rail: #2A2622;
 }
 @media (prefers-color-scheme: dark) {
   :root[data-theme="electric"] {
-    --bg: #17181C; --surface: #24252C; --surface-2: #2E2F37; --text: #F4F4F7; --muted: #A4A6B2; --border: #383944;
-    --accent: #3B72FF; --accent-ink: #fff; --accent-soft: #1F2B57; --accent-text: #A3BDFF;
-    --ok: #C5FF6A; --ok-soft: #2A3419; --info: #A3BDFF; --info-soft: #1F2B57;
-    --radius: 24px; --radius-md: 999px; --radius-lg: 18px; --radius-xl: 24px; --radius-dialog: 28px; --radius-control: 999px; --shadow: none;
-    --header-bg: #0E0F12; --header-text: #fff; --header-muted: #B8B9C2; --nav-on-bg: #C5FF6A; --nav-on-text: #24252C;
-    --bar-bg: #3B72FF; --bar-value: #fff; --add-bg: #C5FF6A; --add-ink: #24252C; --where-bg: #C5FF6A; --where-ink: #24252C;
-    --chip-on-bg: #3B72FF; --chip-on-text: #fff; --banner-bg: #3B72FF; --banner-text: #fff; --banner-border: #3B72FF; --card-border: #24252C;
+    --bg: #161513; --surface: #1C1A18; --surface-2: #262421; --text: #EFE9DE; --muted: #AAA398; --border: #34302B;
+    --accent: #3B72FF; --accent-ink: #FFFFFF; --accent-soft: #1F2B57; --accent-text: #A3BDFF;
+    --ok: #C5FF6A; --ok-soft: #2A3419; --warn: #F0B75A; --warn-soft: #3B3020;
+    --danger: #F08A80; --danger-soft: #402523; --info: #A3BDFF; --info-soft: #1F2B57;
+    --radius: 16px; --radius-md: 10px; --radius-lg: 12px; --radius-xl: 16px; --radius-dialog: 20px; --radius-control: 10px; --shadow: none;
+    --header-bg: #161513; --header-text: #EFE9DE; --header-muted: #AAA398; --nav-on-bg: #262421; --nav-on-text: #EFE9DE;
+    --bar-bg: #3B72FF; --bar-value: #FFFFFF; --add-bg: #262421; --add-ink: #EFE9DE; --where-bg: #262421; --where-ink: #EFE9DE;
+    --chip-on-bg: #EFE9DE; --chip-on-text: #161513; --banner-bg: #1F2B57; --banner-text: #EFE9DE; --banner-border: #1F2B57; --card-border: #34302B;
+    --ready-bg: #C5FF6A; --ready-ink: #1F1B16;
+    --paper: #23211E; --rail: #5A544C;
   }
 }
 
-/* Shape tweaks that tokens don't cover */
-[data-theme="electric"] h2, [data-theme="electric"] h3 { letter-spacing: -.01em; }
-[data-theme="electric"] .top { border-bottom: 0; }
-[data-theme="electric"] .top::after { display: none; } /* no brand stripe (Figma: show/brand-stripe) */
-[data-theme="electric"] .nav a:hover { background: rgba(255,255,255,.1); }
-[data-theme="electric"] .top .sync { background: var(--mb-lime); color: var(--mb-ink); }
-[data-theme="electric"] .top .sync.off { background: #FF9C8F; color: var(--mb-ink); }
-@media (max-width: 719px) { [data-theme="electric"] .nav { border-top: 0; } }
-[data-theme="electric"] .chip, [data-theme="electric"] .seg button, [data-theme="electric"] #toast { border-radius: 999px; }
-[data-theme="electric"] .btn { font-weight: 700; }
-[data-theme="electric"] .btn.primary:hover:not(:disabled) { border-color: var(--text); }
-[data-theme="electric"] .chip, [data-theme="electric"] .opt span { border-width: 1.5px; }
-[data-theme="electric"] .input { border-radius: 16px; }
-[data-theme="electric"] .kcol { border-radius: var(--radius); }
-[data-theme="electric"] .item:hover:not(:disabled), [data-theme="electric"] .c-item:hover:not(:disabled) { border-color: var(--mb-blue); }
-[data-theme="electric"] .ticket { border-radius: 18px; }
-[data-theme="electric"] .ticket.late { border-color: var(--danger); }
-[data-theme="electric"] .sheet > .row:last-child { border-top: 0; }
-[data-theme="electric"] .approve { border: 0; border-radius: 18px; }
-[data-theme="electric"] .banner b { color: var(--mb-lime); }
+/* No Dekad brand stripe in this look */
+[data-theme="electric"] .top::after { display: none; }
 
-/* Stat tiles: first in blue, second in charcoal with a lime number */
-[data-theme="electric"] .stats .stat:nth-child(1) { background: var(--mb-blue); color: #fff; }
-[data-theme="electric"] .stats .stat:nth-child(2) { background: var(--mb-ink); color: #fff; }
-[data-theme="electric"] .stats .stat:nth-child(2) .stat-v { color: var(--mb-lime); }
-[data-theme="electric"] .stats .stat:nth-child(-n+2) .muted { color: inherit; opacity: .8; }
-[data-theme="electric"] .stat-v { font-size: 30px; letter-spacing: -.02em; }
+/* Signature: order numbers as tear-off ticket stubs */
+[data-theme="electric"] .onum {
+  position: relative; display: inline-block; padding: 1px 10px; font-size: 14px; font-weight: 500;
+  background: var(--paper); border: 1px dashed var(--border); border-radius: 4px;
+}
+[data-theme="electric"] .c-num {
+  position: relative; display: inline-block; padding: 8px 28px 12px; font-weight: 500; font-size: 64px; letter-spacing: -.02em;
+  background: var(--paper); border: 1px dashed var(--border); border-radius: 10px;
+}
+[data-theme="electric"] .c-num::before, [data-theme="electric"] .c-num::after {
+  content: ""; position: absolute; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; background: var(--bg);
+}
+[data-theme="electric"] .c-num::before { left: -7px; }
+[data-theme="electric"] .c-num::after { right: -7px; }
 
-/* Tables as round dots, like a calendar */
-[data-theme="electric"] .tbl { aspect-ratio: 1; min-height: 0; border-width: 1.5px; }
-[data-theme="electric"] .tbl.busy::after { background: var(--mb-lime); box-shadow: 0 0 0 1.5px var(--mb-ink); }
-
-[data-theme="electric"] .cartbar, [data-theme="electric"] .c-bar { border-radius: 999px; }
-
-/* Customer page */
-[data-theme="electric"] .c-where { transform: rotate(-4deg); }
-[data-theme="electric"] .c-num { color: var(--accent); font-size: 80px; letter-spacing: -.03em; }
-[data-theme="electric"] .c-steps li.on::before { background: var(--mb-blue); }
-[data-theme="electric"] .cat-h { color: var(--text); }
-[data-theme="electric"] .qrcard { border-color: var(--mb-blue); border-radius: 24px; }
-
-/* Demo strip (added by demo.js) */
-[data-theme="electric"] .demo-bar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; justify-content: center; padding: 7px 16px; background: var(--mb-lime); color: var(--mb-ink); font-size: 13px; font-weight: 600; }
-[data-theme="electric"] .demo-bar a, [data-theme="electric"] .demo-bar button { color: var(--mb-ink); font: inherit; font-weight: 700; background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
+/* Highlight moment: paper tickets hanging from the kitchen rail, torn bottom edge */
+[data-theme="electric"] .kcol h2 { position: relative; padding-bottom: 14px; margin-bottom: 18px; }
+[data-theme="electric"] .kcol h2::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px; border-radius: 3px; background: var(--rail); }
+[data-theme="electric"] .ticket {
+  margin: 0 16px 28px; border: 0; border-radius: 4px 4px 0 0; background: var(--paper);
+  box-shadow: 0 1px 2px rgba(31, 27, 22, .06), 0 8px 24px rgba(31, 27, 22, .07);
+}
+[data-theme="electric"] .ticket::before {
+  content: ""; position: absolute; top: -18px; left: 50%; width: 40px; height: 10px; margin-left: -20px; border-radius: 2px; background: var(--rail);
+}
+[data-theme="electric"] .ticket::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -8px; height: 8px;
+  background: linear-gradient(135deg, var(--paper) 50%, transparent 50%) 0 0 / 12px 8px repeat-x,
+              linear-gradient(225deg, var(--paper) 50%, transparent 50%) 0 0 / 12px 8px repeat-x;
+}
+[data-theme="electric"] .ticket.late { box-shadow: 0 0 0 1px var(--danger), 0 8px 24px rgba(31, 27, 22, .07); }
+@media (prefers-color-scheme: dark) { [data-theme="electric"] .ticket { box-shadow: none; } }

@@ -42,7 +42,7 @@ async function loadMenu() {
   C.menu = await r.json(); C.offline = false;
   const th = C.menu.theme;
   if (th && document.documentElement.dataset.theme !== th) document.documentElement.dataset.theme = th;
-  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = th === 'electric' ? '#24252C' : '#246EB9';
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = th === 'electric' ? '#F6F3EC' : '#246EB9';
   try { localStorage.setItem((window.CAFE_NS || 'cafeflow') + '.theme', th || 'dekad'); } catch { /* private mode */ }
   document.title = `${C.menu.cafeName} · Order`;
 }
@@ -56,11 +56,11 @@ function vMenu() {
   const chip = (id, label) => `<button class="chip ${C.cat === id ? 'on' : ''}" data-act="cat" data-id="${id}">${esc(label)}</button>`;
   const shown = C.cat === 'all' ? cats : cats.filter(c => c.id === C.cat);
   const n = cartCount();
-  return `${recent ? `<button class="banner" data-act="status" data-id="${recent.id}">📋 See your order status</button>` : ''}
+  return `${recent ? `<button class="banner" data-act="status" data-id="${recent.id}">${icon('receipt')}<span class="grow">See your order status</span></button>` : ''}
     <div class="chips c-chips">${chip('all', 'All')}${cats.map(c => chip(c.id, c.name)).join('')}</div>
     ${shown.map(c => `<h3 class="cat-h">${esc(c.name)}</h3><div class="c-list">${C.menu.items.filter(i => i.catId === c.id).map(i => `
       <button class="c-item" data-act="pick" data-id="${i.id}" ${i.available ? '' : 'disabled'}>
-        <span class="c-item-name">${esc(i.name)}</span><span class="c-item-price">${i.available ? money(i.price) : 'Sold out'}</span><span class="c-add" aria-hidden="true">+</span>
+        <span class="c-item-name">${esc(i.name)}</span><span class="c-item-price">${i.available ? money(i.price) : 'Sold out'}</span><span class="c-add" aria-hidden="true">${icon('plus')}</span>
       </button>`).join('')}</div>`).join('')}
     <div class="c-spacer"></div>
     ${n ? `<button class="c-bar" data-act="cart"><span>View order · ${n} item${n === 1 ? '' : 's'}</span><span>${money(cartTotal())}</span></button>` : ''}`;
@@ -68,7 +68,7 @@ function vMenu() {
 
 function vCart() {
   return `<div class="c-cart">
-    <div class="row"><button class="btn ghost sm" data-act="back">← Menu</button><h2 class="grow">Your order</h2></div>
+    <div class="row"><button class="btn ghost sm" data-act="back">${icon('chevron-left')}Menu</button><h2 class="grow">Your order</h2></div>
     <div class="card"><div class="lines">${C.cart.map((l, i) => `<div class="line"><div class="grow"><div class="line-name">${esc(l.name)}</div>
       ${l.mods.length ? `<div class="mods">${l.mods.map(m => esc(m.name)).join(' · ')}</div>` : ''}${l.note ? `<div class="line-note">“${esc(l.note)}”</div>` : ''}</div>
       <div class="qty"><button data-act="dec" data-i="${i}" aria-label="Fewer">−</button><span>${l.qty}</span><button data-act="inc" data-i="${i}" aria-label="More">+</button></div>
@@ -76,7 +76,7 @@ function vCart() {
       <div class="total"><span>Total</span><b>${money(cartTotal())}</b></div></div>
     ${TAKE ? `<label class="lbl">Your name<input id="c-name" class="input" maxlength="30" autocomplete="given-name" value="${esc(C.name)}" placeholder="So we can call you when it's ready"></label>` : ''}
     <label class="lbl">Anything we should know? (optional)<textarea id="c-note" class="input" rows="2" maxlength="120" placeholder="e.g. allergies, bring drinks first">${esc(C.note)}</textarea></label>
-    <p class="muted sm" style="margin:0">💳 You pay at the counter. Prices are confirmed by the café.</p>
+    <p class="muted sm" style="margin:0">You pay at the counter. Prices are confirmed by the café.</p>
     <button class="btn primary c-wide" data-act="place" ${C.busy ? 'disabled' : ''}>${C.busy ? 'Sending…' : `Place order · ${money(cartTotal())}`}</button>
   </div>`;
 }
@@ -88,9 +88,9 @@ function vStatus() {
   const head = {
     pending: ['Order sent', 'Waiting for the café to confirm it…'],
     new: ['Order accepted', "You're in the queue."],
-    prep: ['Being prepared', "Won't be long!"],
-    ready: dine ? ['Ready!', 'Your order is on its way to your table.'] : ['Ready for pickup!', 'Please collect it at the counter.'],
-    done: [dine ? 'Served' : 'Picked up', 'Enjoy! 😊'],
+    prep: ['Being prepared', "Won't be long"],
+    ready: dine ? ['Ready', 'Your order is on its way to your table.'] : ['Ready for pickup', 'Please collect it at the counter.'],
+    done: [dine ? 'Served' : 'Picked up', 'Enjoy your order.'],
     cancelled: ['Order cancelled', 'Please speak to our staff.'],
   }[o.status] || ['Order', ''];
   const flow = ['pending', 'new', 'prep', 'ready', 'done'], at = flow.indexOf(o.status);
@@ -99,10 +99,10 @@ function vStatus() {
     <div class="muted sm">${dine ? `Table ${esc(o.table)}` : 'Takeaway'} · Order number</div>
     <div class="c-num">#${o.num}</div>
     <h2>${head[0]}</h2><p class="muted" style="margin:4px 0 0">${head[1]}</p>
-    ${o.status !== 'cancelled' ? `<ol class="c-steps">${steps.map(([l, i]) => `<li class="${at >= i ? 'on' : ''}">${l}</li>`).join('')}</ol>` : ''}
+    ${o.status !== 'cancelled' ? `<ol class="c-steps">${steps.map(([l, i]) => `<li class="${at > i ? 'on' : at === i ? 'on now' : ''}">${l}</li>`).join('')}</ol>` : ''}
     <div class="card c-sum">${o.lines.map(l => `<div class="line"><b>${l.qty}×</b><div class="grow">${esc(l.name)}${l.mods.length ? `<div class="mods">${l.mods.map(esc).join(' · ')}</div>` : ''}</div></div>`).join('')}
       <div class="total"><span>Total</span><b>${money(o.total)}</b></div><p class="muted sm" style="margin:6px 0 0">Pay at the counter.</p></div>
-    <button class="btn primary c-wide" data-act="more">Order something else</button>
+    <button class="btn c-wide" data-act="more">Order something else</button>
     ${C.offline ? '<p class="muted sm">Reconnecting…</p>' : ''}
   </div>`;
 }
@@ -114,11 +114,11 @@ function render() {
     return;
   }
   $('#c-cafe').textContent = C.menu.cafeName;
-  const w = $('#c-where'); w.hidden = !validTable(); w.textContent = TAKE ? 'Takeaway' : `Table ${T}`;
+  const w = $('#c-where'); w.hidden = !validTable(); w.innerHTML = icon('qr-code') + (TAKE ? 'Takeaway' : `Table ${esc(T)}`);
   if (!validTable()) { app.innerHTML = msg('Scan the QR code on your table', 'This link is missing a valid table number.'); return; }
   if (C.view === 'status') { app.innerHTML = vStatus(); return; }
   if (!C.menu.tableOk) { app.innerHTML = msg('This QR code has expired', 'Please ask our staff for a new one, or order at the counter.'); return; }
-  if (!C.menu.qrEnabled) { app.innerHTML = msg('Ordering by QR is paused', 'Please order at the counter. Sorry for the trouble!'); return; }
+  if (!C.menu.qrEnabled) { app.innerHTML = msg('Ordering by QR is paused', 'Please order at the counter. Sorry for the trouble.'); return; }
   if (C.view === 'cart' && !C.cart.length) C.view = 'menu';
   app.innerHTML = C.view === 'cart' ? vCart() : vMenu();
 }
@@ -127,7 +127,7 @@ function render() {
 function openItem(it) {
   const groups = it.groups.map(id => C.menu.groups.find(g => g.id === id)).filter(g => g && g.options.length);
   let qty = 1;
-  D.innerHTML = `<div class="dlg-in"><button class="dlg-x icon-btn" type="button" aria-label="Close">✕</button><form class="sheet" id="itemForm">
+  D.innerHTML = `<div class="dlg-in"><button class="dlg-x icon-btn" type="button" aria-label="Close">${icon('x')}</button><form class="sheet" id="itemForm">
     <header class="sheet-head"><h3>${esc(it.name)}</h3><span class="muted">${money(it.price)}</span></header>
     ${groups.map(g => `<fieldset><legend>${esc(g.name)}${g.multi ? ' <small>· choose any</small>' : ''}</legend><div class="opts">${g.options.map((o, k) => `<label class="opt"><input type="${g.multi ? 'checkbox' : 'radio'}" name="g_${g.id}" value="${o.id}" ${!g.multi && k === 0 ? 'checked' : ''}><span>${esc(o.name)}${o.price ? ` <small>+${money(o.price)}</small>` : ''}</span></label>`).join('')}</div></fieldset>`).join('')}
     <fieldset><legend>Special request</legend><input name="note" class="input" maxlength="80" placeholder="e.g. extra hot, no ice"></fieldset>

@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#246EB9">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&family=Poppins:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Poppins:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -22,15 +22,16 @@
     <div class="brand"><img src="icons/icon-192.png" alt="" width="28" height="28"><span id="brand-name">CafeFlow</span></div>
     <span id="sync" class="sync" role="status" hidden></span>
     <nav class="nav" aria-label="Main">
-      <a href="#pos" data-view="pos"><span class="ico">🧾</span>Order</a>
-      <a href="#kitchen" data-view="kitchen"><span class="ico">🔥</span>Kitchen<span class="badge" id="kbadge" hidden></span></a>
-      <a href="#orders" data-view="orders"><span class="ico">📋</span>Orders<span class="badge" id="obadge" hidden title="QR orders waiting for approval"></span></a>
-      <a href="#menu" data-view="menu"><span class="ico">☕</span>Menu</a>
-      <a href="#settings" data-view="settings"><span class="ico">⚙️</span>Settings</a>
+      <a href="#pos" data-view="pos"><svg data-icon="receipt"></svg>Order</a>
+      <a href="#kitchen" data-view="kitchen"><svg data-icon="chef-hat"></svg>Kitchen<span class="badge" id="kbadge" hidden></span></a>
+      <a href="#orders" data-view="orders"><svg data-icon="clipboard-list"></svg>Orders<span class="badge" id="obadge" hidden title="QR orders waiting for approval"></span></a>
+      <a href="#menu" data-view="menu"><svg data-icon="coffee"></svg>Menu</a>
+      <a href="#settings" data-view="settings"><svg data-icon="settings"></svg>Settings</a>
     </nav>
   </header>
   <main id="main"></main>
   <dialog id="dlg"></dialog>
+  <script src="icons.js"></script>
   <script src="shared.js"></script>
   <script src="app.js"></script>
 </body>

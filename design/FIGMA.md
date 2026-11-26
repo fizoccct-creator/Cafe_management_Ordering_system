@@ -10,8 +10,8 @@
 | Staff App | Order, Kitchen, Orders/approvals, Menu, Settings, Sign-in, Table QR codes (desktop 1280), Order + Kitchen (phone 375), Order in Dark mode |
 | Customer App | Menu, Item options, Your order, Order sent, Order ready, Expired QR code (phone 375), plus Dark mode examples |
 | [Electric Theme](https://www.figma.com/design/VPIk0WRR7gf5DUIIb6lSdN?node-id=24-791) | Every staff and customer screen in the Electric look (from the client mood board), plus Electric Dark examples |
-| [Demo, unslopped](https://www.figma.com/design/VPIk0WRR7gf5DUIIb6lSdN?node-id=32-2) | Redesign of the demo with the unslop method (Figma only, not in code yet): components kit, staff Order / Kitchen / Orders, guest Menu / Order status, demo tour hero |
-| [Dekad, polished](https://www.figma.com/design/VPIk0WRR7gf5DUIIb6lSdN?node-id=40-589) | The main Dekad look polished with unslop (Figma only): same five app screens in the Counter collection's Dekad mode |
+| [Demo, unslopped](https://www.figma.com/design/VPIk0WRR7gf5DUIIb6lSdN?node-id=32-2) | Redesign of the demo with the unslop method, now the app's **Electric** look: components kit, staff Order / Kitchen / Orders, guest Menu / Order status, demo tour hero |
+| [Dekad, polished](https://www.figma.com/design/VPIk0WRR7gf5DUIIb6lSdN?node-id=40-589) | The main Dekad look polished with unslop, now the app's **Dekad** look: same five app screens in the Counter collection's Dekad mode |
 
 ## How Figma maps to the code
 
@@ -82,7 +82,7 @@ This checks both looks (Dekad in `styles.css`, Electric in `themes/moodboard.css
 - To preview dark mode, select a frame and set its **Color** variable mode to **Dark** (see the "(Dark mode)" frames).
 - The QR card shows a sample pattern; the app draws the real, signed QR code for each table.
 
-## Demo, unslopped and Dekad, polished (redesigns, not in code yet)
+## Demo, unslopped and Dekad, polished (the current design)
 
 Made with the unslop skill. Direction: *brisk, friendly, exact*; world = a café counter mid-morning (paper tickets, the kitchen rail, receipt paper).
 
@@ -90,4 +90,4 @@ Made with the unslop skill. Direction: *brisk, friendly, exact*; world = a café
 - **Mode switches:** `counter/show-paper` (rail, clip and torn edge, demo only), `counter/show-stripe` (Dekad brand stripe, Dekad only), `counter/stub-fill`, `stub-line`, `notch` (ticket-stub box, transparent in Dekad), `counter/ticket-top/-bottom` (ticket radius). On the Dekad page, numbers use Montserrat instead of IBM Plex Mono.
 - **Type:** Montserrat Medium/SemiBold for titles, Poppins Regular/Medium for text, **IBM Plex Mono** for order numbers, prices and times. No 800/900 weights, no uppercase labels, no italic.
 - **Components (on that page):** `Icon/*` (lucide, 18px, 1.5 stroke), `Button` (Primary/Secondary × Md/Sm), `Order stub` (signature: tear-off ticket stub, S/L), `Kitchen ticket` (New/Preparing/Ready, paper ticket on a rail with a torn edge), `Staff top bar` (Active = Order/Kitchen/Orders).
-- To ship it, the CSS needs the `--c-*` tokens, the icon set in place of emoji, and the ticket/stub styles; the existing Dekad and Electric pages are unchanged.
+- **In the code:** `styles.css` (shared polish + Dekad), `themes/moodboard.css` (Electric = this design, plus a warm dark mode), `icons.js` (the same lucide icons as `Icon/*`). The Color/Layout collections' Light, Dark, Electric Light/Dark and Layout modes were updated to these values, so `node tools/tokens.js` keeps checking them. The older Staff App, Customer App and Electric Theme pages still use the previous components (emoji icons, heavier type) but pick up the new colours.

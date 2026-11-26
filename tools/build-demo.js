@@ -19,7 +19,7 @@ if (OUT === ROOT || OUT.startsWith(ROOT + path.sep)) { console.error('Choose an 
 
 const FILES = [
   'demo.html', 'demo-app.html', 'demo-order.html', 'demo.js',
-  'app.js', 'customer.js', 'shared.js', 'styles.css', 'themes/moodboard.css',
+  'app.js', 'customer.js', 'shared.js', 'icons.js', 'styles.css', 'themes/moodboard.css',
   'icons/icon-192.png', 'icons/logo-blue.png', 'icons/logo-white.png',
 ];
 for (const f of FILES) {

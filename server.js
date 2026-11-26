@@ -223,7 +223,7 @@ function buildCustomerOrder(b) {
   if (!take && !(String(n) === String(b.table) && n >= 1 && n <= s.tables)) throw httpErr(400, 'Unknown table. Please scan the QR code on your table again.');
   if (!qrKeyOk(b.table, b.key)) throw httpErr(403, 'This QR code is no longer valid. Please ask our staff.');
   if (!Array.isArray(b.lines) || !b.lines.length) throw httpErr(400, 'Your order is empty');
-  if (b.lines.length > 30) throw httpErr(400, 'That is a big order! Please order at the counter.');
+  if (b.lines.length > 30) throw httpErr(400, 'That is a big order. Please order at the counter.');
   const lines = b.lines.map(l => {
     const it = db.state.items.find(i => i.id === (l && l.itemId));
     if (!it) throw httpErr(409, 'An item in your order is no longer on the menu');
@@ -268,7 +268,7 @@ function customerOrderStatus(id, res) {
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
 const PUBLIC = new Set(['/index.html', '/order.html', '/app.js', '/customer.js', '/shared.js', '/styles.css', '/sw.js', '/manifest.webmanifest',
   '/icons/icon-192.png', '/icons/icon-512.png', '/icons/logo-blue.png', '/icons/logo-white.png',
-  '/demo.html', '/demo-app.html', '/demo-order.html', '/demo.js', '/themes/moodboard.css']);
+  '/demo.html', '/demo-app.html', '/demo-order.html', '/demo.js', '/themes/moodboard.css', '/icons.js']);
 function serveStatic(p, res) {
   if (p === '/') p = '/index.html';
   if (!PUBLIC.has(p)) { res.writeHead(404); return res.end('Not found'); }

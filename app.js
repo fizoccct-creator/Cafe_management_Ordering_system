@@ -18,7 +18,7 @@ const FLOW = ['new', 'prep', 'ready', 'done'];
 const LABEL = { pending: 'Needs approval', new: 'New', prep: 'Preparing', ready: 'Ready', done: 'Completed', cancelled: 'Cancelled' };
 const THEME_INFO = { // Settings → Look; the CSS is in styles.css (dekad) and themes/moodboard.css (electric)
   dekad: { name: 'Dekad', note: 'Brand blue, teal and green', colors: ['#246EB9', '#16BAC5', '#93FF96', '#1E1E1E'], bar: '#246EB9' },
-  electric: { name: 'Electric', note: 'Electric blue, lime, charcoal, round shapes', colors: ['#1F5EFF', '#C5FF6A', '#24252C', '#E4E4EB'], bar: '#24252C' },
+  electric: { name: 'Electric', note: 'Warm paper, electric blue, kitchen tickets on a rail', colors: ['#1F5EFF', '#F6F3EC', '#1F1B16', '#C5FF6A'], bar: '#F6F3EC' },
 };
 function applyTheme(t) {
   const id = THEME_INFO[t] ? t : (document.documentElement.dataset.theme || 'dekad');
@@ -171,7 +171,7 @@ const pendingOrders = () => S.orders.filter(o => o.status === 'pending').sort((a
 const qrPill = o => o.source === 'qr' ? ' <span class="pill qr" title="Ordered by the customer with a QR code">QR</span>' : '';
 function pendingBanner() {
   const n = pendingOrders().length;
-  return n ? `<button class="banner" data-act="goPending">📱 <b>${n} QR order${n === 1 ? '' : 's'}</b> waiting for approval — tap to review</button>` : '';
+  return n ? `<button class="banner" data-act="goPending">${icon('qr-code')}<span class="grow"><b>${n} QR order${n === 1 ? '' : 's'}</b> need${n === 1 ? 's' : ''} approval</span><span class="banner-link">Review</span></button>` : '';
 }
 
 function vLogin() {
@@ -195,9 +195,9 @@ function vQR() {
     return `<div class="qrcard"><div class="qr-cafe">${esc(S.settings.cafeName)}</div><div class="qr-table">${label}</div>
       <div class="qr-code" data-url="${esc(url)}"></div><div class="qr-hint">Scan to order · Pay at the counter</div><div class="qr-url">${esc(url)}</div></div>`;
   };
-  return `<div class="toolbar no-print"><div class="row"><a class="btn ghost sm" href="#settings">← Settings</a><h2>Table QR codes</h2></div>
+  return `<div class="toolbar no-print"><div class="row"><a class="btn ghost sm" href="#settings">${icon('chevron-left')}Settings</a><h2>Table QR codes</h2></div>
       <div class="row">${urls.length > 1 ? `<label class="lbl">Server address<select class="input" id="qrBase">${urls.map(u => `<option ${u === base ? 'selected' : ''}>${esc(u)}</option>`).join('')}</select></label>` : ''}
-      <button class="btn primary" data-act="print">🖨 Print</button></div></div>
+      <button class="btn primary" data-act="print">${icon('printer')}Print</button></div></div>
     ${off ? '<p class="banner no-print">QR ordering is turned off in Settings, so customers will see a "paused" message.</p>' : ''}
     <p class="muted sm no-print">${SYNC.cloud ? 'Customers can scan from anywhere with mobile data or Wi-Fi.' : 'Customers must be on the café Wi-Fi.'} Each code only works for its own table. Print, cut out and place one on each table. The takeaway code goes at the counter.</p>
     <div class="qrgrid">${tables.map(t => card(t, 'Table ' + t)).join('')}${card('take', 'Takeaway')}</div>`;
@@ -224,7 +224,7 @@ function vPos() {
   return `<div class="pos ${UI.showCart ? 'show-cart' : ''}">
     <section class="menu-pane">
       ${pendingBanner()}
-      <input id="q" class="input" type="search" placeholder="Search menu…" value="${esc(UI.q)}" aria-label="Search menu">
+      <input id="q" class="input" type="search" placeholder="Search" value="${esc(UI.q)}" aria-label="Search menu">
       <div class="chips">${chip('all', 'All')}${S.categories.map(c => chip(c.id, c.name)).join('')}</div>
       <div id="grid" class="grid">${gridHTML()}</div>
     </section>
@@ -247,7 +247,7 @@ function cartHTML(tot) {
     ? `<div class="lbl">Table${UI.table ? ` <span class="muted">· ${esc(UI.table)} selected</span>` : ''}</div>
        <div class="tables">${tables.map(t => `<button class="tbl ${UI.table === t ? 'on' : ''} ${busy.has(t) ? 'busy' : ''}" data-act="table" data-id="${t}" title="${busy.has(t) ? 'Has an open order' : ''}">${t}</button>`).join('')}</div>`
     : `<label class="lbl">Customer name (optional)<input id="cust" class="input" value="${esc(UI.customer)}" placeholder="Called out when ready"></label>`;
-  return `<div class="cart-head"><h2>Current order</h2><button class="icon-btn only-narrow" data-act="hideCart" aria-label="Close order">✕</button></div>
+  return `<div class="cart-head"><h2>Current order</h2><button class="icon-btn only-narrow" data-act="hideCart" aria-label="Close order">${icon('x')}</button></div>
     <div class="seg">${[['dine', 'Dine-in'], ['take', 'Takeaway']].map(([t, l]) => `<button class="${UI.type === t ? 'on' : ''}" data-act="type" data-id="${t}">${l}</button>`).join('')}</div>
     ${where}
     <div class="lines">${UI.cart.length ? UI.cart.map(lineHTML).join('') : '<p class="empty">Tap an item to add it.</p>'}</div>
@@ -270,7 +270,7 @@ function vKitchen() {
     return `<section class="kcol k-${s}"><h2>${LABEL[s]}<span class="count">${list.length}</span></h2>${list.join('') || '<p class="empty">Nothing here</p>'}</section>`;
   };
   return `${pendingBanner()}<div class="toolbar"><div class="chips">${[['all', 'All stations'], ['bar', 'Bar · drinks'], ['kitchen', 'Kitchen · food']].map(([id, l]) => `<button class="chip ${st === id ? 'on' : ''}" data-act="station" data-id="${id}">${l}</button>`).join('')}</div>
-    <button class="btn ghost sm" data-act="sound">${UI.sound ? '🔔 Sound on' : '🔕 Sound off'}</button></div>
+    <button class="btn ghost sm" data-act="sound">${UI.sound ? icon('bell') + 'Sound on' : icon('bell-off') + 'Sound off'}</button></div>
     <div class="kboard">${col('new')}${col('prep')}${col('ready')}</div>`;
 }
 function ticket(o, st) {
@@ -278,10 +278,10 @@ function ticket(o, st) {
   if (!lines.length) return '';
   const m = mins(o.createdAt);
   const age = o.status === 'ready' ? '' : m >= S.settings.lateMins ? 'late' : m >= S.settings.warnMins ? 'warn' : '';
-  return `<article class="ticket ${age}"><header><b class="onum">#${o.num}</b><span class="who">${who(o)}${qrPill(o)}</span><span class="age" title="Ordered at ${clock(o.createdAt)}">${m} min</span></header>
+  return `<article class="ticket ${age}"><header><b class="onum">#${o.num}</b><span class="who">${who(o)}${qrPill(o)}</span><span class="age" title="Ordered at ${clock(o.createdAt)}">${icon('clock')}${m} min</span></header>
     <ul>${lines.map(([l, i]) => `<li class="${l.done ? 'done' : ''}" data-act="tline" data-o="${o.id}" data-i="${i}" title="Tap to tick off"><b>${l.qty}×</b> ${esc(l.name)}${modsText(l)}${l.note ? `<div class="line-note">“${esc(l.note)}”</div>` : ''}</li>`).join('')}</ul>
-    ${o.note ? `<p class="onote">📝 ${esc(o.note)}</p>` : ''}
-    <footer>${o.status !== 'new' ? `<button class="btn ghost sm" data-act="back" data-o="${o.id}" aria-label="Move back a step">↩</button>` : ''}<button class="btn primary grow" data-act="adv" data-o="${o.id}">${nextLabel(o)}</button></footer></article>`;
+    ${o.note ? `<p class="onote">${icon('sticky-note')}${esc(o.note)}</p>` : ''}
+    <footer>${o.status !== 'new' ? `<button class="btn ghost sm" data-act="back" data-o="${o.id}" aria-label="Move back a step">${icon('undo')}</button>` : ''}<button class="btn primary grow" data-act="adv" data-o="${o.id}">${nextLabel(o)}</button></footer></article>`;
 }
 
 function vOrders() {
@@ -300,12 +300,12 @@ function vOrders() {
   const list = tod.filter(o => match(o, f)).sort((a, b) => b.createdAt - a.createdAt);
   const stat = (k, v) => `<div class="stat"><div class="muted sm">${k}</div><div class="stat-v">${v}</div></div>`;
   const pend = pendingOrders();
-  const approvals = pend.length ? `<section class="card" id="approvals" style="margin-bottom:16px"><div class="card-head"><h2>📱 QR orders to approve · ${pend.length}</h2></div>
+  const approvals = pend.length ? `<section class="card" id="approvals" style="margin-bottom:16px"><div class="card-head"><h2>${icon('qr-code')}Needs approval <span class="count">${pend.length}</span></h2></div>
     <p class="muted sm" style="margin:0">Check the table is occupied and the order looks right. Accepting sends it to the kitchen.</p>
     ${pend.map(o => `<div class="approve"><div class="row"><b class="onum">#${o.num}</b><span class="grow"><b>${who(o)}</b> <span class="muted">· ${clock(o.createdAt)} · ${mins(o.createdAt)} min ago</span></span><b>${money(orderTotal(o))}</b></div>
       <ul>${o.lines.map(l => `<li><b>${l.qty}×</b> ${esc(l.name)}${modsText(l)}${l.note ? `<div class="line-note">“${esc(l.note)}”</div>` : ''}</li>`).join('')}</ul>
-      ${o.note ? `<p class="onote">📝 ${esc(o.note)}</p>` : ''}
-      <div class="row"><button class="btn ghost sm danger" data-act="reject" data-o="${o.id}">Reject</button><button class="btn primary grow" data-act="accept" data-o="${o.id}">Accept & send to kitchen</button></div></div>`).join('')}</section>` : '';
+      ${o.note ? `<p class="onote">${icon('sticky-note')}${esc(o.note)}</p>` : ''}
+      <div class="row approve-acts"><button class="btn sm danger ghost" data-act="reject" data-o="${o.id}">Reject</button><button class="btn primary sm" data-act="accept" data-o="${o.id}">Accept and send to kitchen</button></div></div>`).join('')}</section>` : '';
   return `${approvals}<div class="stats">${stat('Orders today', valid.length)}${stat('Items made', itemsMade)}${stat('Order value', money(value))}${stat('Avg. time to ready', avg === null ? '—' : avg + ' min')}</div>
     <div class="orders-wrap">
       <section class="card"><div class="card-head"><h2>Today's orders</h2>
@@ -318,7 +318,7 @@ function orow(o) {
   const acts = ACTIVE.includes(o.status)
     ? `<button class="btn ghost sm danger" data-act="cancel" data-o="${o.id}">Cancel</button><button class="btn primary sm" data-act="adv" data-o="${o.id}">${nextLabel(o)}</button>`
     : o.status === 'cancelled' ? `<button class="btn ghost sm" data-act="restore" data-o="${o.id}">Restore</button>` : '';
-  return `<div class="orow"><div class="orow-main"><div><b>#${o.num}</b> <span class="muted">${clock(o.createdAt)} · ${who(o)}</span> <span class="pill s-${o.status}">${LABEL[o.status]}</span>${qrPill(o)}</div>
+  return `<div class="orow"><div class="orow-main"><div><b class="onum">#${o.num}</b> <span class="muted">${clock(o.createdAt)} · ${who(o)}</span> <span class="pill s-${o.status}">${LABEL[o.status]}</span>${qrPill(o)}</div>
     <div class="muted sm clip">${o.lines.map(l => `${l.qty}× ${esc(l.name)}`).join(', ')}</div></div>
     <b class="orow-total">${money(orderTotal(o))}</b><div class="orow-acts">${acts}</div></div>`;
 }
@@ -332,8 +332,8 @@ function vMenu() {
       <button class="btn ghost sm" data-act="editItem" data-id="${i.id}">Edit</button></div>`).join('') || '<p class="empty">No items in this category</p>'}`;
   }).join('');
   const cats = S.categories.map((c, i) => `<div class="mrow"><div class="grow">${esc(c.name)}</div>
-    <button class="icon-btn" data-act="moveCat" data-id="${c.id}" data-dir="-1" ${i === 0 ? 'disabled' : ''} aria-label="Move up">↑</button>
-    <button class="icon-btn" data-act="moveCat" data-id="${c.id}" data-dir="1" ${i === S.categories.length - 1 ? 'disabled' : ''} aria-label="Move down">↓</button>
+    <button class="icon-btn" data-act="moveCat" data-id="${c.id}" data-dir="-1" ${i === 0 ? 'disabled' : ''} aria-label="Move up">${icon('chevron-up')}</button>
+    <button class="icon-btn" data-act="moveCat" data-id="${c.id}" data-dir="1" ${i === S.categories.length - 1 ? 'disabled' : ''} aria-label="Move down">${icon('chevron-down')}</button>
     <button class="btn ghost sm" data-act="renameCat" data-id="${c.id}">Rename</button>
     <button class="btn ghost sm danger" data-act="delCat" data-id="${c.id}">Delete</button></div>`).join('');
   const groups = S.groups.map(g => `<div class="mrow"><div class="grow"><div>${esc(g.name)} ${g.multi ? '<span class="pill">pick any</span>' : ''}</div>
@@ -378,7 +378,7 @@ function vSettings() {
     ${server ? `<section class="card"><h2>QR ordering</h2><form id="qrForm" class="stack">
       <label class="opt inline"><input type="checkbox" name="qrEnabled" ${s.qrEnabled !== false ? 'checked' : ''}><span>Customers can order by scanning a table QR code</span></label>
       <label class="opt inline"><input type="checkbox" name="qrApproval" ${s.qrApproval !== false ? 'checked' : ''}><span>Staff approve QR orders before they reach the kitchen</span></label>
-      <div class="row"><button class="btn primary">Save</button><a class="btn" href="#qr">🖨 Table QR codes</a></div>
+      <div class="row"><button class="btn primary">Save</button><a class="btn" href="#qr">${icon('printer')}Table QR codes</a></div>
       <p class="muted sm" style="margin:0">If QR codes were photographed or shared, make new ones: every printed code stops working.</p>
       <div class="row"><button type="button" class="btn ghost danger sm" data-act="qrRotate">Make new QR codes</button></div></form></section>
     <section class="card"><h2>Staff PIN</h2><form id="pinForm" class="stack">
@@ -405,7 +405,7 @@ function vSettings() {
 const D = $('#dlg');
 D.addEventListener('click', e => { if (e.target === D) D.close(); });
 function dlg(html, mount) {
-  D.innerHTML = `<div class="dlg-in"><button class="dlg-x icon-btn" type="button" aria-label="Close">✕</button>${html}</div>`;
+  D.innerHTML = `<div class="dlg-in"><button class="dlg-x icon-btn" type="button" aria-label="Close">${icon('x')}</button>${html}</div>`;
   $('.dlg-x', D).onclick = () => D.close();
   D.showModal();
   if (mount) mount(D);
@@ -463,7 +463,7 @@ function editItem(id) {
 function editGroup(id) {
   const g = id ? S.groups.find(x => x.id === id) : { name: '', multi: false, options: [] };
   if (!g) return;
-  const row = (o = { id: uid(), name: '', price: 0 }) => `<div class="optrow" data-oid="${o.id}"><input class="input grow" placeholder="Option name" value="${esc(o.name)}" aria-label="Option name"><input class="input price" type="number" step="0.01" min="0" value="${o.price || ''}" placeholder="+0.00" aria-label="Extra price"><button type="button" class="icon-btn" data-rm aria-label="Remove option">✕</button></div>`;
+  const row = (o = { id: uid(), name: '', price: 0 }) => `<div class="optrow" data-oid="${o.id}"><input class="input grow" placeholder="Option name" value="${esc(o.name)}" aria-label="Option name"><input class="input price" type="number" step="0.01" min="0" value="${o.price || ''}" placeholder="+0.00" aria-label="Extra price"><button type="button" class="icon-btn" data-rm aria-label="Remove option">${icon('x')}</button></div>`;
   dlg(`<form class="sheet" id="gForm"><header class="sheet-head"><h3>${id ? 'Edit option group' : 'New option group'}</h3></header>
     <label class="lbl">Group name<input class="input" name="name" required maxlength="30" value="${esc(g.name)}" placeholder="e.g. Milk"></label>
     <label class="opt inline"><input type="checkbox" name="multi" ${g.multi ? 'checked' : ''}><span>Customers can pick more than one (e.g. extras)</span></label>

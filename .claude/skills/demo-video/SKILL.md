@@ -17,6 +17,8 @@ Two finished videos exist. Reuse them; do not redesign from scratch unless asked
 | Outputs | `renders\final.mp4` (1920x1080), `renders\final_reels_9x16.mp4` (1080x1920) |
 | Backlot board | `.venv\Scripts\python.exe -m backlot open cafeflow-demo-explainer` → http://127.0.0.1:4750 |
 
+Note: the videos were made before the unslop redesign, so they show the previous Electric look (charcoal header, lime nav). Re-capture and re-render to show the current design.
+
 Approved choices (decision_log): concept A "From #1 to Served", runtime **HyperFrames**, atelier composition, **no voice, no music** (text-led), Electric mood-board palette (blue #1F5EFF, lime #C5FF6A, ink #24252C, fog #E4E4EB; Montserrat + Poppins). 12 scenes, 60s; script in `artifacts\script.json`, scenes in `artifacts\scene_plan.json`.
 
 ## Fast path: re-render after the app changed
