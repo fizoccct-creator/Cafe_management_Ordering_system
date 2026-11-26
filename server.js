@@ -265,16 +265,28 @@ function customerOrderStatus(id, res) {
 }
 
 /* ---------- Static files ---------- */
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.jpg': 'image/jpeg', '.mp4': 'video/mp4' };
 const PUBLIC = new Set(['/index.html', '/order.html', '/app.js', '/customer.js', '/shared.js', '/styles.css', '/sw.js', '/manifest.webmanifest',
   '/icons/icon-192.png', '/icons/icon-512.png', '/icons/logo-blue.png', '/icons/logo-white.png',
-  '/demo.html', '/demo-app.html', '/demo-order.html', '/demo.js', '/themes/moodboard.css', '/icons.js']);
-function serveStatic(p, res) {
+  '/demo.html', '/demo-app.html', '/demo-order.html', '/demo.js', '/themes/moodboard.css', '/icons.js',
+  '/media/walkthrough.mp4', '/media/walkthrough.jpg']);
+function serveStatic(p, res, req) {
   if (p === '/') p = '/index.html';
   if (!PUBLIC.has(p)) { res.writeHead(404); return res.end('Not found'); }
   fs.readFile(path.join(ROOT, p), (err, buf) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }
-    res.writeHead(200, { 'Content-Type': TYPES[path.extname(p)], 'Cache-Control': 'no-cache' });
+    const type = TYPES[path.extname(p)];
+    // Video needs byte ranges (Safari won't play it otherwise)
+    const range = req && type === 'video/mp4' && /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+    if (range) {
+      let start = range[1] === '' ? buf.length - Number(range[2]) : Number(range[1]);
+      let end = range[1] !== '' && range[2] !== '' ? Number(range[2]) : buf.length - 1;
+      start = Math.max(0, start); end = Math.min(end, buf.length - 1);
+      if (start > end) { res.writeHead(416, { 'Content-Range': `bytes */${buf.length}` }); return res.end(); }
+      res.writeHead(206, { 'Content-Type': type, 'Content-Range': `bytes ${start}-${end}/${buf.length}`, 'Accept-Ranges': 'bytes', 'Content-Length': end - start + 1, 'Cache-Control': 'no-cache' });
+      return res.end(buf.subarray(start, end + 1));
+    }
+    res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-cache', ...(type === 'video/mp4' ? { 'Accept-Ranges': 'bytes' } : {}) });
     res.end(buf);
   });
 }
@@ -318,7 +330,7 @@ async function route(req, res) {
     res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Disposition': `attachment; filename="cafeflow-backup-${new Date().toISOString().slice(0, 10)}.json"` });
     return res.end(JSON.stringify(db.state, null, 2));
   }
-  if (m === 'GET') return serveStatic(p, res);
+  if (m === 'GET') return serveStatic(p, res, req);
   res.writeHead(405); res.end();
 }
 

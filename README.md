@@ -112,6 +112,7 @@ charcoal, round cards, tilted tags). From it, clients can try the real software:
   café data. It opens with the menu ready and **no orders**, so a walkthrough starts at order #1:
   staff take an order on the Order screen, a guest orders at Table 5, staff approve it, the kitchen
   serves both. A guest order placed in one tab shows up in the staff app in another tab.
+- A 40-second **walkthrough video** (`media/walkthrough.mp4`) plays in the corner of the tour page and opens from "Watch the walkthrough" in the demo strip. Re-record it with `tools/video/record-walkthrough.mjs`.
 - **Start over** empties it again; **Fill with sample orders** loads a busy morning (orders in
   every stage) for showing reports and the kitchen board.
 - To host the demo on its own (e.g. Cloudflare Pages), run `node tools/build-demo.js <folder>` and

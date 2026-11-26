@@ -119,13 +119,69 @@
     throw new TypeError('Demo mode has no server'); // staff app stays in this-browser mode
   };
 
+  /* ---------- Walkthrough video (media/walkthrough.mp4, recorded with tools/video/record-walkthrough.mjs) ----------
+     Tour page: a small player in the bottom-right corner. App pages: a "Watch the walkthrough" link in the demo strip.
+     Both open the full video in a dialog. */
+  const VIDEO = 'media/walkthrough.mp4', POSTER = 'media/walkthrough.jpg';
+  const X = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+  const PLAY = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>';
+  function styles() {
+    if (document.getElementById('wt-style')) return;
+    const s = document.createElement('style'); s.id = 'wt-style';
+    s.textContent = `
+      .wt-corner { position: fixed; right: 20px; bottom: 20px; z-index: 60; width: 280px; background: #fff; color: #1F1B16; border-radius: 14px; box-shadow: 0 1px 2px rgba(31,27,22,.08), 0 12px 32px rgba(31,27,22,.16); overflow: hidden; font: 14px/1.4 Poppins, system-ui, sans-serif; }
+      .wt-thumb { display: block; position: relative; width: 100%; padding: 0; border: 0; background: #F6F3EC; cursor: pointer; aspect-ratio: 16 / 9; }
+      .wt-thumb video { display: block; width: 100%; height: 100%; object-fit: cover; }
+      .wt-play { position: absolute; left: 12px; bottom: 12px; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: #1F5EFF; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+      .wt-meta { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
+      .wt-meta b { font-weight: 500; flex: 1; }
+      .wt-meta span { color: #7B7266; font-size: 12px; }
+      .wt-hide { width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; color: #7B7266; display: grid; place-items: center; cursor: pointer; }
+      .wt-hide:hover { background: #EFEAE1; }
+      .wt-dlg { width: min(960px, calc(100vw - 32px)); padding: 0; border: 0; border-radius: 16px; background: #1F1B16; overflow: hidden; }
+      .wt-dlg::backdrop { background: rgba(20, 16, 12, .6); }
+      .wt-dlg video { display: block; width: 100%; height: auto; }
+      .wt-x { position: absolute; top: 10px; right: 10px; z-index: 1; width: 36px; height: 36px; border: 0; border-radius: 10px; display: grid; place-items: center; background: rgba(255,255,255,.9); color: #1F1B16; cursor: pointer; }
+      @media (max-width: 600px) { .wt-corner { width: 188px; right: 12px; bottom: 12px; } .wt-meta span { display: none; } }
+      @media (prefers-reduced-motion: reduce) { .wt-thumb video { display: none; } .wt-thumb { background: #F6F3EC url(${POSTER}) center / cover; } }
+    `;
+    document.head.appendChild(s);
+  }
+  function openWalkthrough() {
+    styles();
+    let d = document.getElementById('wt-dlg');
+    if (!d) {
+      d = document.createElement('dialog'); d.id = 'wt-dlg'; d.className = 'wt-dlg'; d.setAttribute('aria-label', 'CafeFlow walkthrough video');
+      d.innerHTML = `<button type="button" class="wt-x" aria-label="Close">${X}</button><video src="${VIDEO}" poster="${POSTER}" controls playsinline preload="metadata"></video>`;
+      document.body.appendChild(d);
+      d.querySelector('.wt-x').onclick = () => d.close();
+      d.addEventListener('click', e => { if (e.target === d) d.close(); });
+      d.addEventListener('close', () => d.querySelector('video').pause());
+    }
+    d.showModal();
+    const v = d.querySelector('video'); v.currentTime = 0; v.play().catch(() => {});
+  }
+  window.CafeDemo.openWalkthrough = openWalkthrough;
+  function cornerPlayer() {
+    try { if (localStorage.getItem(NS + '.wt-hidden')) return; } catch { /* ignore */ }
+    styles();
+    const c = document.createElement('div'); c.className = 'wt-corner';
+    c.innerHTML = `<button type="button" class="wt-thumb" aria-label="Play the 40-second walkthrough video"><video src="${VIDEO}" poster="${POSTER}" muted autoplay loop playsinline preload="auto"></video><span class="wt-play">${PLAY}</span></button>
+      <div class="wt-meta"><b>Watch the walkthrough</b><span>0:40</span><button type="button" class="wt-hide" aria-label="Hide the walkthrough">${X}</button></div>`;
+    c.querySelector('.wt-thumb').onclick = openWalkthrough;
+    c.querySelector('.wt-hide').onclick = () => { c.remove(); try { localStorage.setItem(NS + '.wt-hidden', '1'); } catch { /* ignore */ } };
+    document.body.appendChild(c);
+  }
+
   /* ---------- Demo strip at the top of each page (not inside the tour's embedded screens) ---------- */
   document.addEventListener('DOMContentLoaded', () => {
-    if (window.top !== window || document.body.dataset.demoBar === 'off') return;
+    if (window.top !== window) return;
+    if (document.body.dataset.demoBar === 'off') { if (document.body.dataset.walkthrough !== 'off') cornerPlayer(); return; }
     const bar = document.createElement('div');
     bar.className = 'demo-bar';
-    bar.innerHTML = '<span>Demo café · everything stays in this browser</span><a href="demo.html">Back to the tour</a><button type="button" data-r="0">Start over</button><button type="button" data-r="1">Fill with sample orders</button>';
-    bar.querySelectorAll('button').forEach(b => { b.onclick = () => { reset(b.dataset.r === '1'); location.reload(); }; });
+    bar.innerHTML = '<span>Demo café · everything stays in this browser</span><a href="demo.html">Back to the tour</a><button type="button" data-wt>Watch the walkthrough</button><button type="button" data-r="0">Start over</button><button type="button" data-r="1">Fill with sample orders</button>';
+    bar.querySelectorAll('button[data-r]').forEach(b => { b.onclick = () => { reset(b.dataset.r === '1'); location.reload(); }; });
+    bar.querySelector('[data-wt]').onclick = openWalkthrough;
     document.body.prepend(bar);
   });
 })();

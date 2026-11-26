@@ -52,3 +52,17 @@ Before rendering, eyeball frames: `npx hyperframes snapshot --at 3.5,10.2,15,22.
 ## New variant (other ratio, language, café)
 
 Copy the closest composition, keep the 12-scene timing, re-lay out positions only. For a different café, capture against that café's demo data. Square 1:1 = 1080x1080: reuse the Reels layout with smaller devices. Add a `render_report` output entry for each new file.
+
+## Walkthrough video (the one in the demo's corner)
+
+A 40-second real-UI recording of the current demo, separate from the explainers above: guest phone and staff tablet side by side, one caption per step (staff order #1, guest QR order #2, approve, kitchen, guest sees Ready), end card with the Dekad contact details.
+
+| What | Where |
+|---|---|
+| Stage page (captions, frames, tap rings) | `tools/video/walkthrough.html` |
+| Recorder (scripted clicks + Chrome screencast + ffmpeg) | `tools/video/record-walkthrough.mjs` (steps and captions in `STEPS`) |
+| Output used by the demo | `media/walkthrough.mp4` (1920x1080, ~1 MB) and `media/walkthrough.jpg` (poster) |
+| Player | `demo.js`: corner player on the tour page, "Watch the walkthrough" in the demo strip on app pages |
+
+Re-record after UI changes: serve the repo (`python -m http.server 8096 --bind 127.0.0.1`), run `node tools/video/record-walkthrough.mjs media/walkthrough.mp4`, then `ffmpeg -ss 27.5 -i media/walkthrough.mp4 -frames:v 1 -vf scale=960:-1 -q:v 4 media/walkthrough.jpg`. Check a frame sheet, then publish the demo (demo-deploy skill).
+If a step fails with "not found", the error lists the buttons it saw; button labels must match the app's text exactly.

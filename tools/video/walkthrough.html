@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1280, height=720">
+  <title>CafeFlow walkthrough stage</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Poppins:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap">
+  <style>
+    /* Recording stage for the demo walkthrough video (tools/video/record-walkthrough.mjs).
+       Not shipped: it frames the real demo pages side by side and shows a caption per step. */
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 1280px; height: 720px; overflow: hidden; background: #F6F3EC; color: #1F1B16; font-family: Poppins, sans-serif; }
+    .top { position: absolute; left: 48px; right: 48px; top: 28px; height: 64px; display: flex; align-items: center; gap: 16px; }
+    .mark { width: 28px; height: 28px; border-radius: 7px; background: #1F5EFF; flex: none; }
+    .brand { font: 600 17px Montserrat, sans-serif; }
+    .by { font-size: 13px; color: #7B7266; }
+    .cap { margin-left: 32px; flex: 1; position: relative; height: 64px; }
+    .cap span { position: absolute; left: 0; top: 50%; transform: translateY(-50%); font: 500 26px/1.2 Montserrat, sans-serif; letter-spacing: -.01em; opacity: 0; transition: opacity .35s ease, transform .35s ease; }
+    .cap span.on { opacity: 1; transform: translateY(-50%); transition-delay: .25s; }
+    .cap span.out { opacity: 0; transition-duration: .2s; }
+    .step { font: 500 14px 'IBM Plex Mono', monospace; color: #7B7266; }
+    .phone { position: absolute; left: 64px; top: 116px; width: 278px; height: 580px; padding: 9px; border-radius: 40px; background: #1F1B16; }
+    .phone .vp { width: 260px; height: 562px; border-radius: 32px; overflow: hidden; position: relative; background: #F6F3EC; }
+    .phone iframe { width: 390px; height: 844px; border: 0; transform: scale(.6667); transform-origin: 0 0; }
+    .tablet { position: absolute; left: 390px; top: 128px; width: 846px; height: 545px; padding: 12px; border-radius: 24px; background: #1F1B16; }
+    .tablet .vp { width: 822px; height: 521px; border-radius: 14px; overflow: hidden; position: relative; background: #F6F3EC; }
+    .tablet iframe { width: 1280px; height: 812px; border: 0; transform: scale(.6422); transform-origin: 0 0; }
+    .label { position: absolute; font: 500 13px Poppins, sans-serif; color: #5E554A; }
+    .ring { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; border: 3px solid #1F5EFF; background: rgba(31, 94, 255, .14); pointer-events: none; opacity: 0; z-index: 10; }
+    .ring.go { animation: tap .6s cubic-bezier(.22, 1, .36, 1); }
+    @keyframes tap { 0% { opacity: 1; transform: scale(.4); } 100% { opacity: 0; transform: scale(1.4); } }
+    .end { position: absolute; inset: 0; background: #F6F3EC; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; opacity: 0; transition: opacity .5s ease; z-index: 20; }
+    .end.on { opacity: 1; }
+    .end h1 { margin: 0; font: 500 48px/1.1 Montserrat, sans-serif; letter-spacing: -.02em; }
+    .end p { margin: 0; font-size: 18px; color: #5E554A; }
+    .end .cta { margin-top: 8px; padding: 12px 22px; border-radius: 10px; background: #1F5EFF; color: #fff; font: 500 16px Poppins, sans-serif; }
+    .end .contact { margin-top: 18px; font: 500 14px 'IBM Plex Mono', monospace; color: #7B7266; }
+  </style>
+</head>
+<body data-demo-bar="off" data-walkthrough="off">
+  <div class="top">
+    <div class="mark"></div><div class="brand">CafeFlow</div><div class="by">by Dekad</div>
+    <div class="cap" id="cap"></div>
+    <div class="step" id="step"></div>
+  </div>
+  <div class="label" style="left:72px;top:96px">Guest phone · Table 5</div>
+  <div class="phone"><div class="vp"><iframe id="guest" title="Guest"></iframe></div></div>
+  <div class="label" style="left:398px;top:106px">Staff tablet</div>
+  <div class="tablet"><div class="vp"><iframe id="staff" title="Staff"></iframe></div></div>
+  <div class="ring" id="ring"></div>
+  <div class="end" id="end">
+    <h1>Try it yourself</h1>
+    <p>The demo starts empty, so the first order you place is #1</p>
+    <div class="cta">Open the CafeFlow demo</div>
+    <div class="contact">dekad.teknologies@gmail.com · +673 7447639</div>
+  </div>
+  <script src="../../shared.js"></script>
+  <script src="../../demo.js"></script>
+  <script>
+    'use strict';
+    CafeDemo.reset(false);
+    document.getElementById('staff').src = '../../demo-app.html#pos';
+    document.getElementById('guest').src = '../../demo-order.html?t=5';
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const frames = { staff: [document.getElementById('staff'), .6422, 390 + 12, 128 + 12], guest: [document.getElementById('guest'), .6667, 64 + 9, 116 + 9] };
+    window.caption = (text, step) => {
+      const cap = document.getElementById('cap');
+      cap.querySelectorAll('span').forEach(s => { s.classList.remove('on'); s.classList.add('out'); setTimeout(() => s.remove(), 400); });
+      const s = document.createElement('span'); s.textContent = text; cap.appendChild(s);
+      requestAnimationFrame(() => requestAnimationFrame(() => s.classList.add('on')));
+      document.getElementById('step').textContent = step || '';
+    };
+    window.findEl = (frame, sel, text) => {
+      const doc = frames[frame][0].contentDocument;
+      return [...doc.querySelectorAll(sel)].find(el => !text || el.textContent.trim() === text || (text.length > 2 && el.textContent.includes(text)));
+    };
+    window.tap = async (frame, sel, text) => {
+      let el = null;
+      for (let i = 0; i < 15 && !(el = findEl(frame, sel, text)); i++) await sleep(200); // screens re-render
+      if (!el) {
+        const seen = [...frames[frame][0].contentDocument.querySelectorAll('button')].map(b => b.textContent.trim()).filter(Boolean).slice(0, 20).join(' | ');
+        throw new Error(`not found: ${frame} ${sel} ${text || ''}; buttons: ${seen}`);
+      }
+      el.scrollIntoView({ block: 'nearest' });
+      const [, k, ox, oy] = frames[frame];
+      const r = el.getBoundingClientRect();
+      const ring = document.getElementById('ring');
+      ring.style.left = (ox + (r.left + r.width / 2) * k) + 'px';
+      ring.style.top = (oy + (r.top + r.height / 2) * k) + 'px';
+      ring.classList.remove('go'); void ring.offsetWidth; ring.classList.add('go');
+      await sleep(260);
+      el.click();
+    };
+    window.go = (frame, hash) => { frames[frame][0].contentWindow.location.hash = hash; };
+    window.ending = () => document.getElementById('end').classList.add('on');
+  </script>
+</body>
+</html>
